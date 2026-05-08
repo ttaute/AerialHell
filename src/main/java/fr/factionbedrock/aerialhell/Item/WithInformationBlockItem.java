@@ -18,7 +18,7 @@ public class WithInformationBlockItem extends BlockItem implements ExtraHoverTex
 	{
 		this.appendOptionalDescriptionsHoverText(context, tooltipAdder);
 		this.appendAbilityDescriptionHoverText(context, tooltipAdder);
-		this.appendReactorMenuHoverText(context, tooltipAdder);
+		this.appendReactorMenuHoverText(context.player(), context, tooltipAdder);
 	}
 
 	@Override public Item getSelf() {return this;}
