@@ -398,7 +398,7 @@ public class AerialHellItem extends WithInformationItem
 
 		@Override public AerialHellItem.Properties fireResistant() {return (AerialHellItem.Properties) super.fireResistant();}
 
-		@Override public AerialHellItem.Properties trimMaterial(ResourceKey<TrimMaterial> material) {return (AerialHellItem.Properties) this.delayedHolderComponent(DataComponents.PROVIDES_TRIM_MATERIAL, material);}
+		@Override public AerialHellItem.Properties trimMaterial(ResourceKey<TrimMaterial> material) {return (AerialHellItem.Properties) super.trimMaterial(material);}
 
 		@Override public AerialHellItem.Properties stacksTo(int max) {return (AerialHellItem.Properties) super.stacksTo(max);}
 
