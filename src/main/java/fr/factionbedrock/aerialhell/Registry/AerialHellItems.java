@@ -71,6 +71,9 @@ public class AerialHellItems
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
 
+    //guide book
+    public static final DeferredItem<Item> AERIAL_HELL_GUIDE_BOOK = ITEMS.register(Keys.AERIAL_HELL_GUIDE_BOOK.identifier().getPath(), () -> new AerialHellGuideBook(new Item.Properties().setId(Keys.AERIAL_HELL_GUIDE_BOOK).stacksTo(1)));
+
     //portal
     public static final DeferredItem<Item> STELLAR_PORTAL_FRAME_BLOCK = ITEMS.register(Keys.STELLAR_PORTAL_FRAME_BLOCK.identifier().getPath(), () -> new BlockItem(AerialHellBlocks.STELLAR_PORTAL_FRAME_BLOCK.get(), new Item.Properties().setId(Keys.STELLAR_PORTAL_FRAME_BLOCK).useBlockDescriptionPrefix()));
     public static final DeferredItem<Item> STELLAR_PORTAL_FRAME_ORE = ITEMS.register(Keys.STELLAR_PORTAL_FRAME_ORE.identifier().getPath(), () -> new BlockItem(AerialHellBlocks.STELLAR_PORTAL_FRAME_ORE.get(), new Item.Properties().setId(Keys.STELLAR_PORTAL_FRAME_ORE).useBlockDescriptionPrefix()));
@@ -1045,6 +1048,9 @@ public class AerialHellItems
 
     public static class Keys
     {
+        //guide book
+        public static final ResourceKey<Item> AERIAL_HELL_GUIDE_BOOK = createKey("aerial_hell_guide_book");
+
         //portal
         public static final ResourceKey<Item> STELLAR_PORTAL_FRAME_BLOCK = createKey("stellar_portal_frame_block");
         public static final ResourceKey<Item> STELLAR_PORTAL_FRAME_ORE = createKey("stellar_portal_frame_ore");
