@@ -57,7 +57,7 @@ public class GuideBookScreen extends Screen
     private static final List<Tab> TABS_RIGHT = List.of(
             new Tab("Armors",  0xFF1E88E5, 11),
             new Tab("Tools",    0xFFFF6D00, 15),
-            new Tab("Utilities", 0xFF8E24AA, 19));
+            new Tab("Utilities", 0xFF8E24AA, 20));
 
     //book position
     private int bookLeft, bookRight, bookTop, bookBottom;
@@ -191,7 +191,7 @@ public class GuideBookScreen extends Screen
             int textWidth = this.font.width(tab.name()) + 6;
 
             graphics.fill(textX - 3, textY - 2, textX + textWidth, textY + 10, 0xCC000000);
-            graphics.text(this.font, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF);
+            graphics.text(this.font, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF, false);
         }
     }
 
@@ -212,10 +212,10 @@ public class GuideBookScreen extends Screen
         if (currentPage != null)
         {
             String pageTitle = "- " + currentPage.name() + " -";
-            graphics.text(this.font, Component.literal(pageTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(pageTitle)) / 2, bookTop + 20, 0xFF5C3A1E);
+            graphics.text(this.font, Component.literal(pageTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(pageTitle)) / 2, bookTop + 20, 0xFF5C3A1E, false);
 
             String pageText = this.currentPage == 0 ? "Click on a tab to start exploring !" : "WIP";
-            graphics.text(this.font, Component.literal(pageText), bookLeft + 20, bookTop + 45, 0xFF7A5C3A);
+            graphics.text(this.font, Component.literal(pageText), bookLeft + 20, bookTop + 45, 0xFF7A5C3A, false);
         }
     }
 
