@@ -1,6 +1,7 @@
 package fr.factionbedrock.aerialhell.Client.Gui.Screen.Inventory;
 
 import fr.factionbedrock.aerialhell.AerialHell;
+import fr.factionbedrock.aerialhell.Client.Util.ClientHelper;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -251,12 +252,12 @@ public class GuideBookScreen extends Screen
         currentLineIndex++;
 
         //content text
-        String pageText = this.currentPage == 0 ? "Click on a tab to start exploring ! Et licet quocumque oculos flexeris feminas adfatim multas spectare cirratas, quibus, si nupsissent, per aetatem ter iam nixus poterat suppetere liberorum, ad usque taedium pedibus pavimenta tergentes iactari volucriter gyris, dum exprimunt innumera simulacra, quae finxere fabulae theatrales.\n" +
+        String pageText = this.currentPage == 0 ? "Click on a tab to start exploring ! Et licet abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz quocumque oculos flexeris feminas adfatim multas spectare cirratas, quibus, si nupsissent, per aetatem ter xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx iam nixus poterat suppetere liberorum, ad abcdefghifjklmnopqrstuvwxyzabcdefghifjklmnopqrstuvwxyzabcdefghifjklmnopqrstuvwxyz usque taedium pedibus pavimenta tergentes iactari volucriter gyris, dum exprimunt innumera simulacra, quae finxere fabulae theatrales.\n" +
                 "\n" +
                 "Hanc regionem praestitutis celebritati diebus invadere parans dux ante edictus per solitudines Aboraeque amnis herbidas ripas, suorum indicio proditus, qui admissi flagitii metu exagitati ad praesidia descivere Romana. absque ullo egressus effectu deinde tabescebat immobilis." : "WIP";
 
-        List<String> textLines = this.wrapText(pageText, LINE_WIDTH_NO_MARGIN);
-        for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE; i++)
+        List<String> textLines = ClientHelper.wrapTextForBook(pageText, this.font, LINE_WIDTH_NO_MARGIN);
+        for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE - 1; i++)
         {
             currentLineIndex++;
             graphics.text(this.font, Component.literal(textLines.get(i)), Lines.get(currentLineIndex).startX, Lines.get(currentLineIndex).startY, 0xFF7A5C3A, false);
@@ -303,25 +304,6 @@ public class GuideBookScreen extends Screen
             if (ALL_PAGES.get(i).pageIndex() == this.currentPage) {return i;}
         }
         return -1;
-    }
-
-    private List<String> wrapText(String text, int maxWidth)
-    {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder current = new StringBuilder();
-        for (String word : words)
-        {
-            String test = current.isEmpty() ? word : current + " " + word;
-            if (this.font.width(test) <= maxWidth) current = new StringBuilder(test);
-            else
-            {
-                if (!current.isEmpty()) lines.add(current.toString());
-                current = new StringBuilder(word);
-            }
-        }
-        if (!current.isEmpty()) lines.add(current.toString());
-        return lines;
     }
 
     @Override public boolean isPauseScreen() {return false;}
