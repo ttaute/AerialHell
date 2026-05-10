@@ -1,6 +1,7 @@
 package fr.factionbedrock.aerialhell.Client.Gui.Screen.Inventory;
 
 import fr.factionbedrock.aerialhell.AerialHell;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -8,6 +9,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GuideBookScreen extends Screen
@@ -60,7 +62,7 @@ public class GuideBookScreen extends Screen
             new Tab("Utilities", 0xFF8E24AA, 20));
 
     //book position
-    private int bookLeft, bookRight, bookTop, bookBottom;
+    private int bookLeft, bookRight, bookTop, bookBottom, leftPageLeft;
     //navigation arrows position
     private int navigationArrowTop;
     private int navigationArrowBottom;
@@ -78,6 +80,23 @@ public class GuideBookScreen extends Screen
     private static final int TAB_GAP = 10;
     //navigation arrow dimension
     private static final int NAVIGATION_ARROW_SIZE = 20;
+
+    //page
+    private int firstLineY;
+    private int leftPageLineX, rightPageLineX;
+    private int leftPageCenterX, rightPageCenterX;
+    private static final int LINE_HEIGHT = 10;
+    private static final int MARGIN_WIDTH = 10;
+    private static final int LINE_WIDTH = 178;
+    private static final int LINE_WIDTH_NO_MARGIN = LINE_WIDTH - 2 * MARGIN_WIDTH;
+    private static final int MAX_LINES_PER_VISUAL_PAGE = 17;
+    private static final int MAX_LINES_PER_TECHNICAL_PAGE = MAX_LINES_PER_VISUAL_PAGE * 2;
+
+    private record Line(int index, int startX, int centerX, int startY)
+    {
+        private int centerX(String textToCenter, Font font) {return this.centerX - font.width(textToCenter) / 2;}
+    }
+    private List<Line> Lines = new ArrayList<>();
 
     //state
     private static final int PAGE_SUMMARY_INDEX = 0;
@@ -98,6 +117,19 @@ public class GuideBookScreen extends Screen
         this.leftNavigationArrowRight = this.leftNavigationArrowLeft + NAVIGATION_ARROW_SIZE;
         this.rightNavigationArrowRight = this.bookRight - 5;
         this.rightNavigationArrowLeft = this.rightNavigationArrowRight - NAVIGATION_ARROW_SIZE;
+
+        this.leftPageLeft = this.bookLeft + 206;
+        this.firstLineY = this.bookTop + 9;
+        this.leftPageLineX = this.bookLeft + MARGIN_WIDTH;
+        this.rightPageLineX = this.leftPageLeft + MARGIN_WIDTH;
+        this.leftPageCenterX = this.leftPageLineX + LINE_WIDTH_NO_MARGIN / 2;
+        this.rightPageCenterX = this.rightPageLineX + LINE_WIDTH_NO_MARGIN / 2;
+
+        for (int lineIndex = 0; lineIndex < MAX_LINES_PER_TECHNICAL_PAGE; lineIndex++)
+        {
+            boolean isLeftPageLine = lineIndex < MAX_LINES_PER_VISUAL_PAGE;
+            this.Lines.add(new Line(lineIndex, isLeftPageLine ? this.leftPageLineX : this.rightPageLineX, isLeftPageLine ? this.leftPageCenterX : this.rightPageCenterX, this.firstLineY + (lineIndex % MAX_LINES_PER_VISUAL_PAGE) * LINE_HEIGHT));
+        }
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
@@ -208,14 +240,26 @@ public class GuideBookScreen extends Screen
     {
         Page currentPage = null;
         for (Page page : ALL_PAGES)  if (page.pageIndex() == this.currentPage) currentPage = page;
+        if (currentPage == null) {return;}
 
-        if (currentPage != null)
+        int currentLineIndex = 0;
+
+        //centered title
+        String pageTitle = "- " + currentPage.name() + " -";
+        graphics.text(this.font, Component.literal(pageTitle), Lines.get(currentLineIndex).centerX(pageTitle, this.font), Lines.get(currentLineIndex).startY(), 0xFF5C3A1E, false);
+
+        currentLineIndex++;
+
+        //content text
+        String pageText = this.currentPage == 0 ? "Click on a tab to start exploring ! Et licet quocumque oculos flexeris feminas adfatim multas spectare cirratas, quibus, si nupsissent, per aetatem ter iam nixus poterat suppetere liberorum, ad usque taedium pedibus pavimenta tergentes iactari volucriter gyris, dum exprimunt innumera simulacra, quae finxere fabulae theatrales.\n" +
+                "\n" +
+                "Hanc regionem praestitutis celebritati diebus invadere parans dux ante edictus per solitudines Aboraeque amnis herbidas ripas, suorum indicio proditus, qui admissi flagitii metu exagitati ad praesidia descivere Romana. absque ullo egressus effectu deinde tabescebat immobilis." : "WIP";
+
+        List<String> textLines = this.wrapText(pageText, LINE_WIDTH_NO_MARGIN);
+        for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE; i++)
         {
-            String pageTitle = "- " + currentPage.name() + " -";
-            graphics.text(this.font, Component.literal(pageTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(pageTitle)) / 2, bookTop + 20, 0xFF5C3A1E, false);
-
-            String pageText = this.currentPage == 0 ? "Click on a tab to start exploring !" : "WIP";
-            graphics.text(this.font, Component.literal(pageText), bookLeft + 20, bookTop + 45, 0xFF7A5C3A, false);
+            currentLineIndex++;
+            graphics.text(this.font, Component.literal(textLines.get(i)), Lines.get(currentLineIndex).startX, Lines.get(currentLineIndex).startY, 0xFF7A5C3A, false);
         }
     }
 
@@ -259,6 +303,25 @@ public class GuideBookScreen extends Screen
             if (ALL_PAGES.get(i).pageIndex() == this.currentPage) {return i;}
         }
         return -1;
+    }
+
+    private List<String> wrapText(String text, int maxWidth)
+    {
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split(" ");
+        StringBuilder current = new StringBuilder();
+        for (String word : words)
+        {
+            String test = current.isEmpty() ? word : current + " " + word;
+            if (this.font.width(test) <= maxWidth) current = new StringBuilder(test);
+            else
+            {
+                if (!current.isEmpty()) lines.add(current.toString());
+                current = new StringBuilder(word);
+            }
+        }
+        if (!current.isEmpty()) lines.add(current.toString());
+        return lines;
     }
 
     @Override public boolean isPauseScreen() {return false;}
