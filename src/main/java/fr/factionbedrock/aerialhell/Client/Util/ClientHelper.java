@@ -1,12 +1,16 @@
 package fr.factionbedrock.aerialhell.Client.Util;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHelper
 {
+    public static Player getLocalPlayer() {return Minecraft.getInstance().player;}
+    
     public static List<String> wrapTextForBook(String text, Font font, int maxLineWidth)
     {
         List<String> lines = new ArrayList<>();
