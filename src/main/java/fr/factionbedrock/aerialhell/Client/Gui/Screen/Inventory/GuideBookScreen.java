@@ -2,11 +2,13 @@ package fr.factionbedrock.aerialhell.Client.Gui.Screen.Inventory;
 
 import fr.factionbedrock.aerialhell.AerialHell;
 import fr.factionbedrock.aerialhell.Client.Util.ClientHelper;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
@@ -15,7 +17,7 @@ import java.util.List;
 
 public class GuideBookScreen extends Screen
 {
-    private static final float TEXT_SCALE = 0.8F;
+    private float textScale;
 
     private static final Identifier BOOK_TEXTURE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/guide_book_page.png");
     private static final Identifier NAVIGATION_ARROW_PREVIOUS_PAGE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_previous_page.png");
@@ -23,34 +25,137 @@ public class GuideBookScreen extends Screen
     private static final Identifier NAVIGATION_ARROW_NEXT_PAGE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_next_page.png");
     private static final Identifier NAVIGATION_ARROW_NEXT_PAGE_HOVERED = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_next_page_hovered.png");
 
-    private record Page(String name, int pageIndex) {}
+    private static class Page
+    {
+        private final String pageName;
+        private final int pageIndex;
+        private final Identifier backgroundTexture;
+        List<Paragraph> paragraphs;
+
+        private Page(String pageName, Identifier backgroundTexture, int pageIndex)
+        {
+            this.pageName = pageName;
+            this.backgroundTexture = backgroundTexture;
+            this.pageIndex = pageIndex;
+            this.paragraphs = new ArrayList<>();
+        }
+
+        private void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop)
+        {
+            graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, bookLeft, bookTop, 0f, 0f, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT);
+
+            for (Paragraph paragraph : this.paragraphs)
+            {
+                String paragraphText = Language.getInstance().getOrDefault(paragraph.key);
+                int currentLineIndex = paragraph.startLineIndex;
+
+                List<String> textLines = ClientHelper.wrapTextForBook(paragraphText, font, (int) (LINE_WIDTH_NO_MARGIN / scale));
+                for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE - 1; i++)
+                {
+                    int startX = paragraph.centered ? Lines.get(currentLineIndex).centerX(textLines.get(i), font, scale) : Lines.get(currentLineIndex).startX;
+
+                    ClientHelper.renderText(font, graphics, Component.literal(textLines.get(i)), startX, Lines.get(currentLineIndex).startY, paragraph.color, scale);
+                    currentLineIndex++;
+                }
+            }
+        }
+
+        private String pageName() {return this.pageName;}
+        private int pageIndex() {return this.pageIndex;}
+
+        private Page addParagraph(int startLineIndex, boolean centered, String paragraphName)
+        {
+            this.paragraphs.add(new Paragraph(startLineIndex, centered, 0xFF7A5C3A, "aerialhell.guide_book."+ pageName +"."+paragraphName));
+            return this;
+        }
+
+        private Page addParagraph(int startLineIndex, boolean centered, int color, String paragraphName)
+        {
+            this.paragraphs.add(new Paragraph(startLineIndex, centered, color, "aerialhell.guide_book."+ pageName +"."+paragraphName));
+            return this;
+        }
+    }
+
+    private record Paragraph(int startLineIndex, boolean centered, int color, String key) {}
 
     private static final List<Page> ALL_PAGES = List.of(
-            new Page("Welcome", 0),
-            new Page("Mobs page 1", 1),
-            new Page("Mobs page 2", 2),
-            new Page("Mobs page 3", 3),
-            new Page("Bosses page 1", 4),
-            new Page("Bosses page 2", 5),
-            new Page("Items page 1", 6),
-            new Page("Items page 2", 7),
-            new Page("Items page 3", 8),
-            new Page("Items page 4", 9),
-            new Page("Items page 5", 10),
-            new Page("Armors page 1", 11),
-            new Page("Armors page 2", 12),
-            new Page("Armors page 3", 13),
-            new Page("Armors page 4", 14),
-            new Page("Tools page 1", 15),
-            new Page("Tools page 2", 16),
-            new Page("Tools page 3", 17),
-            new Page("Tools page 4", 18),
-            new Page("Tools page 5", 19),
-            new Page("Utilities page 1", 20),
-            new Page("Utilities page 2", 21),
-            new Page("Utilities page 3", 22),
-            new Page("Utilities page 4", 23),
-            new Page("Utilities page 5", 24));
+            new Page("summary", BOOK_TEXTURE, 0)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "welcome_text"),
+            new Page("mobs_1", BOOK_TEXTURE, 1)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("mobs_2", BOOK_TEXTURE, 2)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("mobs_3", BOOK_TEXTURE, 3)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("bosses_1", BOOK_TEXTURE, 4)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("bosses_2", BOOK_TEXTURE, 5)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(4, false, "content_1"),
+            new Page("items_1", BOOK_TEXTURE, 6)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("items_2", BOOK_TEXTURE, 7)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("items_3", BOOK_TEXTURE, 8)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1")
+                    .addParagraph(16, false, "content_2"),
+            new Page("items_4", BOOK_TEXTURE, 9)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("items_5", BOOK_TEXTURE, 10)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(19, true, 0xFFFF0000, "content_1"),
+            new Page("armors_1", BOOK_TEXTURE, 11)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("armors_2", BOOK_TEXTURE, 12)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("armors_3", BOOK_TEXTURE, 13)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("armors_4", BOOK_TEXTURE, 14)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, true, 0xFFFF0000, "content_1"),
+            new Page("tools_1", BOOK_TEXTURE, 15)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("tools_2", BOOK_TEXTURE, 16)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("tools_3", BOOK_TEXTURE, 17)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("tools_4", BOOK_TEXTURE, 18)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("tools_5", BOOK_TEXTURE, 19)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("utilities_1", BOOK_TEXTURE, 20)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("utilities_2", BOOK_TEXTURE, 21)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(5, false, "content_1"),
+            new Page("utilities_3", BOOK_TEXTURE, 22)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("utilities_4", BOOK_TEXTURE, 23)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1"),
+            new Page("utilities_5", BOOK_TEXTURE, 24)
+                    .addParagraph(0, true, 0xFF5C3A1E, "title")
+                    .addParagraph(2, false, "content_1")
+    );
 
     private record Tab(String name, int color, int pageIndex) {}
 
@@ -97,9 +202,9 @@ public class GuideBookScreen extends Screen
 
     private record Line(int index, int startX, int centerX, int startY)
     {
-        private int centerX(String textToCenter, Font font) {return this.centerX - (int) (font.width(textToCenter) * TEXT_SCALE / 2.0F);}
+        private int centerX(String textToCenter, Font font, float textScale) {return this.centerX - (int) (font.width(textToCenter) * textScale / 2.0F);}
     }
-    private List<Line> Lines = new ArrayList<>();
+    private final List<Line> lines = new ArrayList<>();
 
     //state
     private static final int PAGE_SUMMARY_INDEX = 0;
@@ -110,6 +215,8 @@ public class GuideBookScreen extends Screen
     @Override protected void init()
     {
         super.init();
+        this.textScale = Minecraft.getInstance().options.forceUnicodeFont().get() ? 1.0F : 0.8F;
+
         this.bookLeft = (this.width - BOOK_TEXTURE_WIDTH) / 2;
         this.bookTop  = (this.height - BOOK_TEXTURE_HEIGHT) / 2;
         this.bookRight = this.bookLeft + BOOK_TEXTURE_WIDTH;
@@ -131,7 +238,7 @@ public class GuideBookScreen extends Screen
         for (int lineIndex = 0; lineIndex < MAX_LINES_PER_TECHNICAL_PAGE; lineIndex++)
         {
             boolean isLeftPageLine = lineIndex < MAX_LINES_PER_VISUAL_PAGE;
-            this.Lines.add(new Line(lineIndex, isLeftPageLine ? this.leftPageLineX : this.rightPageLineX, isLeftPageLine ? this.leftPageCenterX : this.rightPageCenterX, this.firstLineY + (lineIndex % MAX_LINES_PER_VISUAL_PAGE) * LINE_HEIGHT));
+            this.lines.add(new Line(lineIndex, isLeftPageLine ? this.leftPageLineX : this.rightPageLineX, isLeftPageLine ? this.leftPageCenterX : this.rightPageCenterX, this.firstLineY + (lineIndex % MAX_LINES_PER_VISUAL_PAGE) * LINE_HEIGHT));
         }
     }
 
@@ -226,7 +333,7 @@ public class GuideBookScreen extends Screen
             int textWidth = this.font.width(tab.name()) + 6;
 
             graphics.fill(textX - 3, textY - 2, textX + textWidth, textY + 10, 0xCC000000);
-            ClientHelper.renderText(this.font, graphics, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF, TEXT_SCALE);
+            ClientHelper.renderText(this.font, graphics, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF, this.textScale);
         }
     }
 
@@ -242,28 +349,10 @@ public class GuideBookScreen extends Screen
     private void renderPageContent(GuiGraphicsExtractor graphics)
     {
         Page currentPage = null;
-        for (Page page : ALL_PAGES)  if (page.pageIndex() == this.currentPage) currentPage = page;
+        for (Page page : ALL_PAGES) {if (page.pageIndex() == this.currentPage) currentPage = page;}
         if (currentPage == null) {return;}
 
-        int currentLineIndex = 0;
-
-        //centered title
-        String pageTitle = "- " + currentPage.name() + " -";
-        ClientHelper.renderText(this.font, graphics, Component.literal(pageTitle), Lines.get(currentLineIndex).centerX(pageTitle, this.font), Lines.get(currentLineIndex).startY(), 0xFF5C3A1E, TEXT_SCALE);
-
-        currentLineIndex++;
-
-        //content text
-        String pageText = this.currentPage == 0 ? "Click on a tab to start exploring ! Et licet abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz quocumque oculos flexeris feminas adfatim multas spectare cirratas, quibus, si nupsissent, per aetatem ter xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx iam nixus poterat suppetere liberorum, ad abcdefghifjklmnopqrstuvwxyzabcdefghifjklmnopqrstuvwxyzabcdefghifjklmnopqrstuvwxyz usque taedium pedibus pavimenta tergentes iactari volucriter gyris, dum exprimunt innumera simulacra, quae finxere fabulae theatrales.\n" +
-                "\n" +
-                "Hanc regionem praestitutis celebritati diebus invadere parans dux ante edictus per solitudines Aboraeque amnis herbidas ripas, suorum indicio proditus, qui admissi flagitii metu exagitati ad praesidia descivere Romana. absque ullo egressus effectu deinde tabescebat immobilis." : "WIP";
-
-        List<String> textLines = ClientHelper.wrapTextForBook(pageText, this.font, (int) (LINE_WIDTH_NO_MARGIN / TEXT_SCALE));
-        for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE - 1; i++)
-        {
-            currentLineIndex++;
-            ClientHelper.renderText(this.font, graphics, Component.literal(textLines.get(i)), Lines.get(currentLineIndex).startX, Lines.get(currentLineIndex).startY, 0xFF7A5C3A, TEXT_SCALE);
-        }
+        currentPage.render(this.font, graphics, this.textScale, lines, this.bookLeft, this.bookTop);
     }
 
     private void renderNavigationButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
