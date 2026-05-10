@@ -15,6 +15,8 @@ import java.util.List;
 
 public class GuideBookScreen extends Screen
 {
+    private static final float TEXT_SCALE = 0.8F;
+
     private static final Identifier BOOK_TEXTURE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/guide_book_page.png");
     private static final Identifier NAVIGATION_ARROW_PREVIOUS_PAGE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_previous_page.png");
     private static final Identifier NAVIGATION_ARROW_PREVIOUS_PAGE_HOVERED = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_previous_page_hovered.png");
@@ -95,7 +97,7 @@ public class GuideBookScreen extends Screen
 
     private record Line(int index, int startX, int centerX, int startY)
     {
-        private int centerX(String textToCenter, Font font) {return this.centerX - font.width(textToCenter) / 2;}
+        private int centerX(String textToCenter, Font font) {return this.centerX - (int) (font.width(textToCenter) * TEXT_SCALE / 2.0F);}
     }
     private List<Line> Lines = new ArrayList<>();
 
@@ -224,7 +226,7 @@ public class GuideBookScreen extends Screen
             int textWidth = this.font.width(tab.name()) + 6;
 
             graphics.fill(textX - 3, textY - 2, textX + textWidth, textY + 10, 0xCC000000);
-            graphics.text(this.font, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF, false);
+            ClientHelper.renderText(this.font, graphics, Component.literal(tab.name()), textX, textY, 0xFFFFFFFF, TEXT_SCALE);
         }
     }
 
@@ -247,7 +249,7 @@ public class GuideBookScreen extends Screen
 
         //centered title
         String pageTitle = "- " + currentPage.name() + " -";
-        graphics.text(this.font, Component.literal(pageTitle), Lines.get(currentLineIndex).centerX(pageTitle, this.font), Lines.get(currentLineIndex).startY(), 0xFF5C3A1E, false);
+        ClientHelper.renderText(this.font, graphics, Component.literal(pageTitle), Lines.get(currentLineIndex).centerX(pageTitle, this.font), Lines.get(currentLineIndex).startY(), 0xFF5C3A1E, TEXT_SCALE);
 
         currentLineIndex++;
 
@@ -256,11 +258,11 @@ public class GuideBookScreen extends Screen
                 "\n" +
                 "Hanc regionem praestitutis celebritati diebus invadere parans dux ante edictus per solitudines Aboraeque amnis herbidas ripas, suorum indicio proditus, qui admissi flagitii metu exagitati ad praesidia descivere Romana. absque ullo egressus effectu deinde tabescebat immobilis." : "WIP";
 
-        List<String> textLines = ClientHelper.wrapTextForBook(pageText, this.font, LINE_WIDTH_NO_MARGIN);
+        List<String> textLines = ClientHelper.wrapTextForBook(pageText, this.font, (int) (LINE_WIDTH_NO_MARGIN / TEXT_SCALE));
         for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE - 1; i++)
         {
             currentLineIndex++;
-            graphics.text(this.font, Component.literal(textLines.get(i)), Lines.get(currentLineIndex).startX, Lines.get(currentLineIndex).startY, 0xFF7A5C3A, false);
+            ClientHelper.renderText(this.font, graphics, Component.literal(textLines.get(i)), Lines.get(currentLineIndex).startX, Lines.get(currentLineIndex).startY, 0xFF7A5C3A, TEXT_SCALE);
         }
     }
 

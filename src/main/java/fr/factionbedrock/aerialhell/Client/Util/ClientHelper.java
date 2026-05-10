@@ -2,6 +2,8 @@ package fr.factionbedrock.aerialhell.Client.Util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
@@ -10,7 +12,22 @@ import java.util.List;
 public class ClientHelper
 {
     public static Player getLocalPlayer() {return Minecraft.getInstance().player;}
-    
+
+    public static void renderText(Font font, GuiGraphicsExtractor graphics, Component text, int x, int y, int color, float scale)
+    {
+        var pose = graphics.pose();
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.scale(scale, scale);
+        renderText(font, graphics, text, 0, 0, color);
+        pose.popMatrix();
+    }
+
+    public static void renderText(Font font, GuiGraphicsExtractor graphics, Component text, int x, int y, int color)
+    {
+        graphics.text(font, text, x, y, color, false);
+    }
+
     public static List<String> wrapTextForBook(String text, Font font, int maxLineWidth)
     {
         List<String> lines = new ArrayList<>();
