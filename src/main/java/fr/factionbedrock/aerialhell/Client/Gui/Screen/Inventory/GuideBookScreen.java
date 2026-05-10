@@ -9,12 +9,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GuideBookScreen extends Screen
 {
     private static final Identifier BOOK_TEXTURE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/guide_book_page.png");
+    private static final Identifier NAVIGATION_ARROW_PREVIOUS_PAGE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_previous_page.png");
+    private static final Identifier NAVIGATION_ARROW_PREVIOUS_PAGE_HOVERED = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_previous_page_hovered.png");
+    private static final Identifier NAVIGATION_ARROW_NEXT_PAGE = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_next_page.png");
+    private static final Identifier NAVIGATION_ARROW_NEXT_PAGE_HOVERED = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/navigation_arrow_next_page_hovered.png");
 
     private record Tab(String name, int color, int page) {}
+
+    private static final Tab SUMMARY_TAB = new Tab("Welcome", 0x0, 0);
 
     private static final List<Tab> TABS_LEFT = List.of(
             new Tab("Mobs",  0xFF4CAF50, 1),
@@ -26,18 +33,29 @@ public class GuideBookScreen extends Screen
             new Tab("Tools",    0xFFFF6D00, 5),
             new Tab("Utilities", 0xFF8E24AA, 6));
 
-    //Book position
-    private int bookLeft, bookTop;
+    private static final List<Tab> ALL_TABS = Stream.concat(Stream.of(SUMMARY_TAB), Stream.concat(TABS_LEFT.stream(), TABS_RIGHT.stream())).toList();
 
-    //Book dimensions
+    //book position
+    private int bookLeft, bookRight, bookTop, bookBottom;
+    //navigation arrows position
+    private int navigationArrowTop;
+    private int navigationArrowBottom;
+    private int leftNavigationArrowLeft;
+    private int leftNavigationArrowRight;
+    private int rightNavigationArrowLeft;
+    private int rightNavigationArrowRight;
+
+    //book dimensions
     private static final int BOOK_TEXTURE_WIDTH = 384;
     private static final int BOOK_TEXTURE_HEIGHT = 192;
-    //Tabs dimensions
+    //tabs dimensions
     private static final int TAB_WIDTH = 18;
     private static final int TAB_HEIGHT = 36;
     private static final int TAB_GAP = 10;
+    //navigation arrow dimension
+    private static final int NAVIGATION_ARROW_SIZE = 20;
 
-    //State
+    //state
     private static final int PAGE_SUMMARY_INDEX = 0;
     private int currentPage = PAGE_SUMMARY_INDEX;
 
@@ -48,27 +66,59 @@ public class GuideBookScreen extends Screen
         super.init();
         this.bookLeft = (this.width  - BOOK_TEXTURE_WIDTH) / 2;
         this.bookTop  = (this.height - BOOK_TEXTURE_HEIGHT) / 2;
+        this.bookRight = this.bookLeft + BOOK_TEXTURE_WIDTH;
+        this.bookBottom = this.bookTop + BOOK_TEXTURE_HEIGHT;
+        this.navigationArrowBottom = this.bookBottom - 5;
+        this.navigationArrowTop = this.navigationArrowBottom - NAVIGATION_ARROW_SIZE;
+        this.leftNavigationArrowLeft = this.bookLeft + 5;
+        this.leftNavigationArrowRight = this.leftNavigationArrowLeft + NAVIGATION_ARROW_SIZE;
+        this.rightNavigationArrowRight = this.bookRight - 5;
+        this.rightNavigationArrowLeft = this.rightNavigationArrowRight - NAVIGATION_ARROW_SIZE;
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
+        //navigation arrows
+        if (this.isHoveringPrevArrow(event.x(), event.y()))
+        {
+            this.navigateToPreviousPage();
+            return true;
+        }
+
+        if (this.isHoveringNextArrow(event.x(), event.y()))
+        {
+            this.navigateToNextPage();
+            return true;
+        }
+
+        //tabs
         for (int i = 0; i < TABS_LEFT.size(); i++)
         {
-            if (isHoveringTab(event.x(), event.y(), i, true))
+            if (this.isHoveringTab(event.x(), event.y(), i, true))
             {
-                this.currentPage = TABS_LEFT.get(i).page();
+                this.navigateToPage(TABS_LEFT.get(i));
                 return true;
             }
         }
         for (int i = 0; i < TABS_RIGHT.size(); i++)
         {
-            if (isHoveringTab(event.x(), event.y(), i, false))
+            if (this.isHoveringTab(event.x(), event.y(), i, false))
             {
-                currentPage = TABS_RIGHT.get(i).page();
+                this.navigateToPage(TABS_RIGHT.get(i));
                 return true;
             }
         }
         return super.mouseClicked(event, doubleClick);
+    }
+
+    private boolean isHoveringPrevArrow(double mouseX, double mouseY)
+    {
+        return mouseX >= this.leftNavigationArrowLeft && mouseX <= this.leftNavigationArrowRight  && mouseY >= this.navigationArrowTop && mouseY <= this.navigationArrowBottom;
+    }
+
+    private boolean isHoveringNextArrow(double mouseX, double mouseY)
+    {
+        return mouseX >= this.rightNavigationArrowLeft && mouseX <= this.rightNavigationArrowRight && mouseY >= this.navigationArrowTop && mouseY <= this.navigationArrowBottom;
     }
 
     private boolean isHoveringTab(double mouseX, double mouseY, int index, boolean isLeft)
@@ -79,12 +129,13 @@ public class GuideBookScreen extends Screen
 
     @Override public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
     {
-        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, bookLeft, bookTop, 0f, 0f, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BOOK_TEXTURE, this.bookLeft, this.bookTop, 0f, 0f, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT);
 
         for (int i = 0; i < TABS_LEFT.size(); i++) {this.renderTab(graphics, i, true, mouseX, mouseY);}
         for (int i = 0; i < TABS_RIGHT.size(); i++) {this.renderTab(graphics, i, false, mouseX, mouseY);}
 
         this.renderPageContent(graphics);
+        this.renderNavigationButtons(graphics, mouseX, mouseY);
 
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
     }
@@ -102,13 +153,13 @@ public class GuideBookScreen extends Screen
 
         graphics.fill(xDraw, y, xDraw + tabWidth, y + TAB_HEIGHT, tab.color());
 
-        //Border
+        //border
         graphics.fill(xDraw, y, xDraw + tabWidth, y + 1, 0xFF1A1A1A);
         graphics.fill(xDraw, y + TAB_HEIGHT - 1, xDraw + tabWidth, y + TAB_HEIGHT, 0xFF1A1A1A);
         graphics.fill(xDraw, y, xDraw + 1, y + TAB_HEIGHT, 0xFF1A1A1A);
         graphics.fill(xDraw + tabWidth - 1, y, xDraw + tabWidth, y + TAB_HEIGHT, 0xFF1A1A1A);
 
-        //Hover text
+        //hover text
         if (hovered)
         {
             int textX = isLeft ? xDraw - this.font.width(tab.name()) - 5 : xDraw + tabWidth + 3;
@@ -125,35 +176,61 @@ public class GuideBookScreen extends Screen
         int totalH = TABS_LEFT.size() * TAB_HEIGHT + (TABS_LEFT.size() - 1) * TAB_GAP;
         int startY = bookTop + (BOOK_TEXTURE_HEIGHT - totalH) / 2;
         int y = startY + tabIndex * (TAB_HEIGHT + TAB_GAP);
-        int x = isLeft ? bookLeft - TAB_WIDTH : bookLeft + BOOK_TEXTURE_WIDTH;
+        int x = isLeft ? bookLeft - TAB_WIDTH : bookRight;
         return new int[]{x, y};
     }
 
     private void renderPageContent(GuiGraphicsExtractor graphics)
     {
-        if (this.currentPage == PAGE_SUMMARY_INDEX)
+        Tab currentTab = null;
+        for (Tab tab : ALL_TABS)  if (tab.page() == this.currentPage) currentTab = tab;
+
+        if (currentTab != null)
         {
-            String summaryTitle = "- Welcome -";
-            graphics.text(this.font, Component.literal(summaryTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(summaryTitle)) / 2, bookTop + 20, 0xFF5C3A1E);
+            String pageTitle = "- " + currentTab.name() + " -";
+            graphics.text(this.font, Component.literal(pageTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(pageTitle)) / 2, bookTop + 20, 0xFF5C3A1E);
 
-            String summaryText = "Click on a tab to start exploring !";
-            graphics.text(this.font, Component.literal(summaryText), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(summaryText)) / 2, bookTop + 40, 0xFF7A5C3A);
+            String pageText = this.currentPage == 0 ? "Click on a tab to start exploring !" : "WIP";
+            graphics.text(this.font, Component.literal(pageText), bookLeft + 20, bookTop + 45, 0xFF7A5C3A);
         }
-        else
+    }
+
+    private void renderNavigationButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    {
+        Identifier previousArrowTexture = this.isHoveringPrevArrow(mouseX, mouseY) ? NAVIGATION_ARROW_PREVIOUS_PAGE_HOVERED : NAVIGATION_ARROW_PREVIOUS_PAGE;
+        Identifier nextArrowTexture = this.isHoveringNextArrow(mouseX, mouseY) ? NAVIGATION_ARROW_NEXT_PAGE_HOVERED : NAVIGATION_ARROW_NEXT_PAGE;
+
+        //previous page arrow
+        graphics.blit(RenderPipelines.GUI_TEXTURED, previousArrowTexture, this.leftNavigationArrowLeft, this.navigationArrowTop, 0f, 0f, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE);
+
+        //next page arrow
+        graphics.blit(RenderPipelines.GUI_TEXTURED, nextArrowTexture, this.rightNavigationArrowLeft, this.navigationArrowTop, 0f, 0f, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE, NAVIGATION_ARROW_SIZE);
+    }
+
+    private void navigateToPage(Tab tab)
+    {
+        this.currentPage = tab.page();
+    }
+
+    private void navigateToPreviousPage()
+    {
+        int nextIndex = getCurrentIndex() - 1;
+        if (nextIndex >= 0 && nextIndex < ALL_TABS.size()) {this.navigateToPage(ALL_TABS.get(nextIndex));}
+    }
+
+    private void navigateToNextPage()
+    {
+        int nextIndex = getCurrentIndex() + 1;
+        if (nextIndex >= 0 && nextIndex < ALL_TABS.size()) {this.navigateToPage(ALL_TABS.get(nextIndex));}
+    }
+
+    private int getCurrentIndex()
+    {
+        for (int i = 0; i < ALL_TABS.size(); i++)
         {
-            Tab currentTab = null;
-            for (Tab tab : TABS_LEFT)  if (tab.page() == currentPage) currentTab = tab;
-            for (Tab tab : TABS_RIGHT) if (tab.page() == currentPage) currentTab = tab;
-
-            if (currentTab != null)
-            {
-                String pageTitle = "- " + currentTab.name() + " -";
-                graphics.text(this.font, Component.literal(pageTitle), bookLeft + (BOOK_TEXTURE_WIDTH / 2 - this.font.width(pageTitle)) / 2, bookTop + 20, 0xFF5C3A1E);
-
-                String pageText = "WIP";
-                graphics.text(this.font, Component.literal(pageText), bookLeft + 20, bookTop + 45, 0xFF7A5C3A);
-            }
+            if (ALL_TABS.get(i).page() == this.currentPage) {return i;}
         }
+        return -1;
     }
 
     @Override public boolean isPauseScreen() {return false;}
