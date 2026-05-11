@@ -210,6 +210,29 @@ public class EntityHelper
         return isLivingEntityShadowBind(entity) && !isLivingEntityATraitor(entity);
     }
 
+    public static boolean hasItemStackInHotbar(Player player, ItemStack stackToSearch)
+    {
+        for (ItemStack stack : getHotbarItemStackList(player))
+        {
+            if (ItemStack.matches(stack, stackToSearch)) {return true;}
+        }
+        return false;
+    }
+
+    public static List<ItemStack> getHotbarItemStackList(Player player)
+    {
+        List<ItemStack> list = new ArrayList<>();
+        for (int i = 0; i < 9; i++)
+        {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (!stack.isEmpty())
+            {
+                list.add(stack);
+            }
+        }
+        return list;
+    }
+
     public static List<EquippedItemStack> getEquippepItemStackList(LivingEntity livingEntity)
     {
         List<EquippedItemStack> list = new ArrayList<>();
