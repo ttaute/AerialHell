@@ -48,6 +48,8 @@ public class ShadowAutomatonEntity extends AutomatonEntity implements ShadowMisl
         this.misleadableDie(damageSource);
         super.die(damageSource);
     }
+
+    @Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
     /* ------------------------------------------------------------------------------------------ */
 
     public static AttributeSupplier.Builder registerAttributes()

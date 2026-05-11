@@ -40,7 +40,7 @@ public interface MisleadableEntity extends BaseMobEntityInterface
             {
                 if (this.traitorTrigger(source) == TraitorTrigger.ON_HURT)
                 {
-                    this.applyTraitorEffectTo(livingSource);
+                    EntityHelper.applyTraitorEffectTo(livingSource);
                 }
                 return superReference.apply(serverLevel, source, amount); //calling super
             }
@@ -57,8 +57,13 @@ public interface MisleadableEntity extends BaseMobEntityInterface
         Entity sourceEntity = damageSource.getEntity();
         if (sourceEntity instanceof LivingEntity livingSource && this.isMisleadedBy(livingSource) && !EntityHelper.isCreaOrSpecPlayer(livingSource) && this.traitorTrigger(damageSource) == TraitorTrigger.ON_DEATH)
         {
-            this.applyTraitorEffectTo(livingSource);
+            EntityHelper.applyTraitorEffectTo(livingSource);
         }
+    }
+
+    default boolean misleadableCanAttack(LivingEntity target, SuperCanAttackReference superReference) //call & return in canAttack(target) - do not call super !
+    {
+        return (!this.isMisleadedBy(target) || EntityHelper.isLivingEntityATraitor(target)) && superReference.apply(target);
     }
     /* ----------------------------------------------- */
     /* ----------------------------------------------- */
@@ -77,10 +82,6 @@ public interface MisleadableEntity extends BaseMobEntityInterface
     /* --------------------------------------- */
     /* -------- Other utility methods -------- */
     /* --------------------------------------- */
-    default void applyTraitorEffectTo(LivingEntity livingEntity)
-    {
-        livingEntity.addEffect(new MobEffectInstance(AerialHellMobEffects.TRAITOR.getDelegate(), 12000, 0));
-    }
 
     @Nullable default LivingEntity misleadableFindTarget(TargetingConditions targetConditions) //call server side
     {
@@ -110,4 +111,5 @@ public interface MisleadableEntity extends BaseMobEntityInterface
     enum TraitorTrigger{NEVER, ON_HURT, ON_DEATH}
 
     @FunctionalInterface interface SuperHurtServerReference{boolean apply(ServerLevel serverLevel, DamageSource damageSource, float amount);}
+    @FunctionalInterface interface SuperCanAttackReference{boolean apply(LivingEntity target);}
 }

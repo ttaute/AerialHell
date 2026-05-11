@@ -43,6 +43,8 @@ public class GhostSlimePirateEntity extends AbstractSlimePirateEntity implements
         this.misleadableDie(damageSource);
         super.die(damageSource);
     }
+
+    @Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
     /* ------------------------------------------------------------------------------------------ */
 
     /* ------- MisleadableEntity : Interface methods Overridden for specific behavior ------- */

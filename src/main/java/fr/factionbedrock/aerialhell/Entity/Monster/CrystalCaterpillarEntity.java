@@ -5,6 +5,7 @@ import fr.factionbedrock.aerialhell.Registry.Entities.AerialHellEntities;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -33,6 +34,8 @@ public class CrystalCaterpillarEntity extends AbstractCaterpillarEntity implemen
 		this.misleadableDie(damageSource);
 		super.die(damageSource);
 	}
+
+	@Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
 	/* ------------------------------------------------------------------------------------------ */
 	
 	@Override protected void registerGoals()

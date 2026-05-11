@@ -9,6 +9,7 @@ import fr.factionbedrock.aerialhell.Registry.AerialHellBlocks;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.level.block.Block;
@@ -49,6 +50,8 @@ public class CrystalGolemEntity extends AerialHellGolemEntity implements LunarMi
         this.misleadableDie(damageSource);
         super.die(damageSource);
     }
+
+    @Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
     /* ------------------------------------------------------------------------------------------ */
 
     @Override protected void defineSynchedData(SynchedEntityData.Builder builder)

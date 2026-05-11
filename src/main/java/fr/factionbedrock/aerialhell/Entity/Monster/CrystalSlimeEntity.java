@@ -63,6 +63,8 @@ public class CrystalSlimeEntity extends Mob implements LunarMisleadableEntity
 		this.misleadableDie(damageSource);
 		super.die(damageSource);
 	}
+
+	@Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
 	/* ------------------------------------------------------------------------------------------ */
 
 	@Override protected void registerGoals()

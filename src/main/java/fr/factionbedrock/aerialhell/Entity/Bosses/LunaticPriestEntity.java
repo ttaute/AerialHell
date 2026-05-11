@@ -8,6 +8,7 @@ import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.ShootProjectileGoal;
 import fr.factionbedrock.aerialhell.Entity.GoalConditionEntity;
 import fr.factionbedrock.aerialhell.Entity.Monster.LunarMisleadableEntity;
 import fr.factionbedrock.aerialhell.Entity.Projectile.LunaticProjectileEntity;
+import fr.factionbedrock.aerialhell.Entity.Util.ActivableEntityInfo;
 import fr.factionbedrock.aerialhell.Registry.AerialHellItems;
 import fr.factionbedrock.aerialhell.Registry.AerialHellSoundEvents;
 import net.minecraft.server.level.ServerLevel;
@@ -43,7 +44,11 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 {
 	public static final int BOTH_PHASES_GOALS = 0, PHASE_1_GOALS = 1, PHASE_2_GOALS = 2;
 	public int attackTimer;
-	
+
+	public final ActivableEntityInfo.ActivationMethod PRIEST_ACTIVATION_METHOD = this.AERIAL_HELL_ACTIVABLE_ACTIVATION_METHOD.copy().validTargetCondition((activableEntity, potentialTarget) -> !((LunaticPriestEntity)activableEntity).isMisleadedBy(potentialTarget));
+	public final ActivableEntityInfo PRIEST_ACTIVABLE_INFO = new ActivableEntityInfo(ACTIVE, PRIEST_ACTIVATION_METHOD);
+	/* ---------------------------- */
+
 	public LunaticPriestEntity(EntityType<? extends Monster> type, Level world)
 	{
 		super(type, world);
@@ -51,6 +56,10 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 		bossInfo.setColor(BossEvent.BossBarColor.YELLOW);
 		bossInfo.setOverlay(BossEvent.BossBarOverlay.NOTCHED_6);
 	}
+
+	/* ---------- ActivableEntity : Interface methods implementation ---------- */
+	@Override public ActivableEntityInfo getActivableInfo() {return this.PRIEST_ACTIVABLE_INFO;} //override for lunar mislead in activation condition
+	/* ------------------------------------------------------------------------ */
 
 	/* ------- MisleadableEntity : Superclass methods Overridden to delegate to interface ------- */
 	@Override public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount)
@@ -63,6 +72,8 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 		this.misleadableDie(damageSource);
 		super.die(damageSource);
 	}
+
+	@Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
 	/* ------------------------------------------------------------------------------------------ */
 
 	/* ------- MisleadableEntity : Interface methods Overridden for specific behavior ------- */
@@ -91,8 +102,7 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 	}
 	/* ----------------------------------------------------------------------------------------------- */
 	
-	@Override
-    protected void registerGoals()
+	@Override protected void registerGoals()
     {
 		/*Phase 1 only*/
 		this.goalSelector.addGoal(5, new ConditionalGoal(this, PHASE_1_GOALS, new RandomFlyGoal(this)));

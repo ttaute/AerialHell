@@ -136,6 +136,11 @@ public class EntityHelper
         return false;
     }
 
+    public static void applyTraitorEffectTo(LivingEntity livingEntity)
+    {
+        livingEntity.addEffect(new MobEffectInstance(AerialHellMobEffects.TRAITOR.getDelegate(), 12000, 0));
+    }
+
     public static void multiplyDeltaMovement(Entity entity, double xzFactor, double yFactor)
     {
         entity.setDeltaMovement(entity.getDeltaMovement().multiply(xzFactor, yFactor, xzFactor));

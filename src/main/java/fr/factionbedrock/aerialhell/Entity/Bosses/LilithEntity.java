@@ -10,9 +10,11 @@ import fr.factionbedrock.aerialhell.Client.Registry.AerialHellParticleTypes;
 import fr.factionbedrock.aerialhell.Config.LoadedConfigParams;
 import fr.factionbedrock.aerialhell.Entity.AI.*;
 import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.ShootProjectileGoal;
+import fr.factionbedrock.aerialhell.Entity.ActivableEntity;
 import fr.factionbedrock.aerialhell.Entity.Monster.ShadowMisleadableEntity;
 import fr.factionbedrock.aerialhell.Entity.Projectile.ShadowProjectileEntity;
 import fr.factionbedrock.aerialhell.Entity.StagedActivableEntity;
+import fr.factionbedrock.aerialhell.Entity.Util.ActivableEntityInfo;
 import fr.factionbedrock.aerialhell.Entity.Util.PlaySoundHelper;
 import fr.factionbedrock.aerialhell.Registry.*;
 import fr.factionbedrock.aerialhell.Registry.Entities.AerialHellEntities;
@@ -63,7 +65,8 @@ public class LilithEntity extends AbstractBossEntity implements StagedActivableE
 	private static final EntityDataAccessor<Boolean> TRANSFORMING = SynchedEntityData.defineId(LilithEntity.class, EntityDataSerializers.BOOLEAN);
 	private static final EntityDataAccessor<Boolean> TRANSFORMED = SynchedEntityData.defineId(LilithEntity.class, EntityDataSerializers.BOOLEAN);
 	StagedActivableEntityInfo.ActivatingPhaseParameters LILITH_TRANSFORMING_PARAMETERS = PLAY_ACTIVATING_PHASE_ONLY_ONCE.copy().activatingThreshold(160).activatingStartSoundHelper(new PlaySoundHelper(AerialHellSoundEvents.ENTITY_LILITH_TRANSFORMATION.get(), 5.0F, 1.0F));
-	public final StagedActivableEntityInfo STAGED_ACTIVABLE_INFO = new StagedActivableEntityInfo(this.ACTIVABLE_INFO, TRANSFORMING, TRANSFORMED, LILITH_TRANSFORMING_PARAMETERS);
+	public final ActivableEntityInfo.ActivationMethod LILITH_ACTIVATION_METHOD = this.AERIAL_HELL_ACTIVABLE_ACTIVATION_METHOD.copy().validTargetCondition((activableEntity, potentialTarget) -> !((LilithEntity)activableEntity).isMisleadedBy(potentialTarget));
+	public final StagedActivableEntityInfo STAGED_ACTIVABLE_INFO = new StagedActivableEntityInfo(new ActivableEntityInfo(ACTIVE, LILITH_ACTIVATION_METHOD), TRANSFORMING, TRANSFORMED, LILITH_TRANSFORMING_PARAMETERS);
 	/* -------------------------------------- */
 
 	public LilithEntity(EntityType<? extends Monster> type, Level world)

@@ -46,6 +46,8 @@ public class GhostSlimeNinjaPirateEntity extends SlimeNinjaPirateEntity implemen
         this.misleadableDie(damageSource);
         super.die(damageSource);
     }
+
+    @Override public boolean canAttack(LivingEntity target) {return this.misleadableCanAttack(target, super::canAttack);}
     /* ------------------------------------------------------------------------------------------ */
 
     /* ------- MisleadableEntity : Interface methods Overridden for specific behavior ------- */
