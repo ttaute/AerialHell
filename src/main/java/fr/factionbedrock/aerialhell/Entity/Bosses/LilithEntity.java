@@ -10,6 +10,7 @@ import fr.factionbedrock.aerialhell.Client.Registry.AerialHellParticleTypes;
 import fr.factionbedrock.aerialhell.Config.LoadedConfigParams;
 import fr.factionbedrock.aerialhell.Entity.AI.*;
 import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.ShootProjectileGoal;
+import fr.factionbedrock.aerialhell.Entity.Monster.ShadowMisleadableEntity;
 import fr.factionbedrock.aerialhell.Entity.Projectile.ShadowProjectileEntity;
 import fr.factionbedrock.aerialhell.Entity.StagedActivableEntity;
 import fr.factionbedrock.aerialhell.Entity.Util.PlaySoundHelper;
@@ -49,7 +50,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
-public class LilithEntity extends AbstractBossEntity implements StagedActivableEntity
+public class LilithEntity extends AbstractBossEntity implements StagedActivableEntity, ShadowMisleadableEntity
 {
 	public int attackTimer;
 	private int transitionTicks;
@@ -73,6 +74,23 @@ public class LilithEntity extends AbstractBossEntity implements StagedActivableE
 		bossInfo.setColor(BossEvent.BossBarColor.PURPLE);
 		bossInfo.setOverlay(BossEvent.BossBarOverlay.NOTCHED_6);
 	}
+
+	/* ------- MisleadableEntity : Superclass methods Overridden to delegate to interface ------- */
+	@Override public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount)
+	{
+		return this.misleadableHurtServer(serverLevel, source, amount, this::lilithHurtServer);
+	}
+
+	@Override public void die(DamageSource damageSource)
+	{
+		this.misleadableDie(damageSource);
+		super.die(damageSource);
+	}
+	/* ------------------------------------------------------------------------------------------ */
+
+	/* ------- MisleadableEntity : Interface methods Overridden for specific behavior ------- */
+	@Override public boolean canMisleaderHurt() {return false;}
+	/* -------------------------------------------------------------------------------------- */
 
 	@Override protected void defineSynchedData(SynchedEntityData.Builder builder)
 	{
@@ -113,7 +131,7 @@ public class LilithEntity extends AbstractBossEntity implements StagedActivableE
     {
 		this.SUMMON_FLYING_SKULL_GOAL = new LilithSummonShadowFlyingSkullGoal(this);
 		this.SHADOW_PROJECTILE_ATTACK_GOAL = new ShadowProjectileAttackGoal(this);
-		this.targetSelector.addGoal(2, new ConditionalGoal(this, new NearestAttackableTargetGoal<>(this, Player.class, true)));
+		this.targetSelector.addGoal(2, new ConditionalGoal(this, new NearestAttackableTargetGoal<>(this, Player.class, true, (potentialTarget, serverLevel) -> !this.isMisleadedBy(potentialTarget))));
 		this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
 		this.goalSelector.addGoal(3, new ConditionalGoal(this, new MeleeAttackGoal(this, 1.25D, false)));
 		this.goalSelector.addGoal(2, this.SUMMON_FLYING_SKULL_GOAL);
@@ -134,7 +152,7 @@ public class LilithEntity extends AbstractBossEntity implements StagedActivableE
 				.add(Attributes.ATTACK_DAMAGE, 20.0D);
     }
 	
-	@Override public boolean hurtServer(ServerLevel level, DamageSource source, float amount)
+	public boolean lilithHurtServer(ServerLevel level, DamageSource source, float amount)
 	{
 		Entity immediateSourceEntity = source.getDirectEntity();
 		Entity trueSourceEntity = source.getEntity();

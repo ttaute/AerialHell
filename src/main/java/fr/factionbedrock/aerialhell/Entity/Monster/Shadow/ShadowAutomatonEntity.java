@@ -3,7 +3,7 @@ package fr.factionbedrock.aerialhell.Entity.Monster.Shadow;
 import com.google.common.collect.ImmutableList;
 import fr.factionbedrock.aerialhell.Entity.AI.FleeBlockGoal;
 import fr.factionbedrock.aerialhell.Entity.Monster.AutomatonEntity;
-import fr.factionbedrock.aerialhell.Entity.Monster.MisleadableEntity;
+import fr.factionbedrock.aerialhell.Entity.Monster.ShadowMisleadableEntity;
 import fr.factionbedrock.aerialhell.Registry.AerialHellBlocks;
 import fr.factionbedrock.aerialhell.Registry.AerialHellMobEffects;
 import fr.factionbedrock.aerialhell.Registry.AerialHellSoundEvents;
@@ -29,23 +29,24 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-public class ShadowAutomatonEntity extends AutomatonEntity implements MisleadableEntity
+public class ShadowAutomatonEntity extends AutomatonEntity implements ShadowMisleadableEntity
 {
     public ShadowAutomatonEntity(EntityType<? extends Monster> type, Level world) {super(type, world);}
 
     /* ------- MisleadableEntity : Interface method implementation ------- */
     @Override public Mob getSelf() {return this;}
-
-    @Override public boolean isMisleadedBy(LivingEntity livingEntity)
-    {
-        return EntityHelper.isLivingEntityMisleadingShadow(livingEntity);
-    }
     /* ------------------------------------------------------------------- */
 
     /* ------- MisleadableEntity : Superclass methods Overridden to delegate to interface ------- */
     @Override public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount)
     {
         return this.misleadableHurtServer(serverLevel, source, amount, super::hurtServer);
+    }
+
+    @Override public void die(DamageSource damageSource)
+    {
+        this.misleadableDie(damageSource);
+        super.die(damageSource);
     }
     /* ------------------------------------------------------------------------------------------ */
 

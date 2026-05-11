@@ -6,6 +6,7 @@ import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.FlyingLookAroundGoal;
 import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.RandomFlyGoal;
 import fr.factionbedrock.aerialhell.Entity.AI.GhastLike.ShootProjectileGoal;
 import fr.factionbedrock.aerialhell.Entity.GoalConditionEntity;
+import fr.factionbedrock.aerialhell.Entity.Monster.LunarMisleadableEntity;
 import fr.factionbedrock.aerialhell.Entity.Projectile.LunaticProjectileEntity;
 import fr.factionbedrock.aerialhell.Registry.AerialHellItems;
 import fr.factionbedrock.aerialhell.Registry.AerialHellSoundEvents;
@@ -38,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 
-public class LunaticPriestEntity extends AbstractBossEntity implements GoalConditionEntity.PhaseAwareGoalConditionEntity
+public class LunaticPriestEntity extends AbstractBossEntity implements GoalConditionEntity.PhaseAwareGoalConditionEntity, LunarMisleadableEntity
 {
 	public static final int BOTH_PHASES_GOALS = 0, PHASE_1_GOALS = 1, PHASE_2_GOALS = 2;
 	public int attackTimer;
@@ -50,6 +51,23 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 		bossInfo.setColor(BossEvent.BossBarColor.YELLOW);
 		bossInfo.setOverlay(BossEvent.BossBarOverlay.NOTCHED_6);
 	}
+
+	/* ------- MisleadableEntity : Superclass methods Overridden to delegate to interface ------- */
+	@Override public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount)
+	{
+		return this.misleadableHurtServer(serverLevel, source, amount, this::lunaticPriestHurtServer);
+	}
+
+	@Override public void die(DamageSource damageSource)
+	{
+		this.misleadableDie(damageSource);
+		super.die(damageSource);
+	}
+	/* ------------------------------------------------------------------------------------------ */
+
+	/* ------- MisleadableEntity : Interface methods Overridden for specific behavior ------- */
+	@Override public boolean canMisleaderHurt() {return false;}
+	/* -------------------------------------------------------------------------------------- */
 
 	/* ----- GoalConditionEntity.PhaseAwareGoalConditionEntity : Interface method implementation ----- */
 	@Override public boolean checkGoalCondition(int conditionIndex) {return this.canUseGoalsAdditionalCondition(conditionIndex);} //need to override checkGoalCondition because priest implements both GoalSimpleConditionEntity and PhaseAwareGoalConditionEntity
@@ -86,7 +104,7 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 		this.goalSelector.addGoal(5, new ConditionalGoal(this, BOTH_PHASES_GOALS, new LookAtPlayerGoal(this, Player.class, 8.0F)));
 	    this.goalSelector.addGoal(2, new ConditionalGoal(this, BOTH_PHASES_GOALS, new LunaticProjectileAttackGoal(this)));
 	    this.goalSelector.addGoal(3, new ConditionalGoal(this, BOTH_PHASES_GOALS, new MeleeAttackGoal(this, 1.25D, false)));
-	    this.targetSelector.addGoal(2, new ConditionalGoal(this, BOTH_PHASES_GOALS, new NearestAttackableTargetGoal<>(this, Player.class, true)));
+	    this.targetSelector.addGoal(2, new ConditionalGoal(this, BOTH_PHASES_GOALS, new NearestAttackableTargetGoal<>(this, Player.class, true, (potentialTarget, serverLevel) -> !this.isMisleadedBy(potentialTarget))));
 		/*Independant of phases*/
 		this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
 		this.goalSelector.addGoal(4, new AvoidEntityGoal<>(this, ChainedGodEntity.class, 6.0F, 1.0D, 1.2D));
@@ -137,7 +155,7 @@ public class LunaticPriestEntity extends AbstractBossEntity implements GoalCondi
 		else {return false;}
 	}
 	
-	@Override public boolean hurtServer(ServerLevel serverLevel, DamageSource source, float amount)
+	public boolean lunaticPriestHurtServer(ServerLevel serverLevel, DamageSource source, float amount)
 	{
 		boolean flag = super.hurtServer(serverLevel, source, amount);
 		if (flag)
