@@ -33,10 +33,9 @@ public class ClientHelper
         List<String> lines = new ArrayList<>();
         for (String paragraph : text.split("\n", -1))
         {
-            String line = paragraph.replace("\t", "    ");
-            if (line.isEmpty()) {lines.add(""); continue; }
+            if (paragraph.isEmpty()) {lines.add(""); continue; }
 
-            String[] words = line.split(" ");
+            String[] words = paragraph.split(" ");
             StringBuilder currentLine = new StringBuilder();
             for (String word : words)
             {
@@ -93,7 +92,8 @@ public class ClientHelper
 
     public static boolean appendWordIfFits(StringBuilder builder, String word, Font font, int maxLineWidth)
     {
-        return appendIfFits(builder, builder.isEmpty() ? word : " " + word, font, maxLineWidth);
+        String processedWord = word.replace("\t", "    ");
+        return appendIfFits(builder, builder.isEmpty() ? processedWord : " " + processedWord, font, maxLineWidth);
     }
 
     public static boolean appendIfFits(StringBuilder builder, String toAppend, Font font, int maxLineWidth)
