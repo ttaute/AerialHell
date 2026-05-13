@@ -14,6 +14,8 @@ import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.function.ToIntFunction;
 
 public class GuideBookScreen extends Screen
 {
@@ -161,25 +163,111 @@ public class GuideBookScreen extends Screen
     {
         private final String key;
         private final int color;
+        private final Supplier<Integer> bookLeft;
+        private final Supplier<Integer> bookTop;
+        private final ToIntFunction<Boolean> relativeXPos; //relative to book left. the boolean is "isHovered"
+        private final int relativeYPos; //relative to book top.
         private final int pageIndex;
 
-        private Tab(String name, int color, int pageIndex)
+        private Tab(String name, int color, Supplier<Integer> bookLeft, Supplier<Integer> bookTop, ToIntFunction<Boolean> relativeXPos, int relativeYPos, int pageIndex)
         {
             this.key = "aerialhell.guide_book.tab." + name;
             this.color = color;
+            this.bookLeft = bookLeft;
+            this.bookTop = bookTop;
+            this.relativeXPos = relativeXPos;
+            this.relativeYPos = relativeYPos;
             this.pageIndex = pageIndex;
+        }
+
+        private int[] getBasePos(int bookLeft, int bookTop)
+        {
+            return new int[]{bookLeft + this.relativeXPos.applyAsInt(false), bookTop + this.relativeYPos};
+        }
+
+        private int[] getRenderPos(boolean isHovered)
+        {
+            return new int[]{this.bookLeft.get() + this.relativeXPos.applyAsInt(isHovered), this.bookTop.get() + this.relativeYPos};
+        }
+
+        private boolean isHovered(double mouseX, double mouseY)
+        {
+            int[] pos = this.getBasePos(this.bookLeft.get(), this.bookTop.get());
+            return mouseX >= pos[0] && mouseX <= pos[0] + TAB_WIDTH && mouseY >= pos[1] && mouseY <= pos[1] + TAB_HEIGHT;
+        }
+
+        private int getWidth(boolean isHovered)
+        {
+            return isHovered ? TAB_WIDTH + HOVERED_TAB_EXTRA_WIDTH : TAB_WIDTH;
+        }
+
+        private void render(GuiGraphicsExtractor graphics, Font font, int mouseX, int mouseY)
+        {
+            boolean isHovered = this.isHovered(mouseX, mouseY);
+            int[] pos = this.getRenderPos(isHovered);
+            int xDraw = pos[0];
+            int yDraw = pos[1];
+            int tabWidth = this.getWidth(isHovered);
+
+            graphics.fill(xDraw, yDraw, xDraw + tabWidth, yDraw + TAB_HEIGHT, this.color);
+
+            //border
+            graphics.fill(xDraw, yDraw, xDraw + tabWidth, yDraw + 1, 0xFF1A1A1A);
+            graphics.fill(xDraw, yDraw + TAB_HEIGHT - 1, xDraw + tabWidth, yDraw + TAB_HEIGHT, 0xFF1A1A1A);
+            graphics.fill(xDraw, yDraw, xDraw + 1, yDraw + TAB_HEIGHT, 0xFF1A1A1A);
+            graphics.fill(xDraw + tabWidth - 1, yDraw, xDraw + tabWidth, yDraw + TAB_HEIGHT, 0xFF1A1A1A);
+
+            //hover text
+            if (isHovered)
+            {
+                graphics.setTooltipForNextFrame(font, Component.translatable(this.key), mouseX, mouseY);
+            }
         }
     }
 
-    private static final List<Tab> TABS_LEFT = List.of(
-            new Tab("mobs",  0xFF4CAF50, 1),
-            new Tab("bosses",  0xFFE53935, 4),
-            new Tab("items", 0xFFFFB300, 6));
+    //The guide book is designed to contain 6 tabs on each side.
+    //Each tab is 24 pixels high.
+    //Tabs are separated by an 8-pixel gap.
+    //The first and last tabs are separated from the top/bottom edges by a 4-pixel margin.
+    //Layout:
+    //   book top
+    //      4 px margin
+    //      24 px tab
+    //      8 px gap
+    //      ...
+    //      4 px margin
+    //   book bottom
+    private static class TabList
+    {
+        private final List<Tab> tabs;
+        private final boolean isLeft;
+        private final Supplier<Integer> bookLeft;
+        private final Supplier<Integer> bookTop;
+        private int nextTabYOffsetFromBookTop;
 
-    private static final List<Tab> TABS_RIGHT = List.of(
-            new Tab("armors",  0xFF1E88E5, 11),
-            new Tab("tools",    0xFFFF6D00, 15),
-            new Tab("utilities", 0xFF8E24AA, 20));
+        private TabList(boolean isLeft, Supplier<Integer> bookLeft, Supplier<Integer> bookTop)
+        {
+            this.tabs = new ArrayList<>();
+            this.bookLeft = bookLeft;
+            this.bookTop = bookTop;
+            this.isLeft = isLeft;
+            this.nextTabYOffsetFromBookTop = TAB_MARGIN;
+        }
+
+        public List<Tab> getTabs() {return this.tabs;}
+
+        private TabList add(String name, int color, int pageIndex)
+        {
+            ToIntFunction<Boolean> xOffset = (isHovered) ->
+                    this.isLeft ? - TAB_WIDTH - (isHovered ? HOVERED_TAB_EXTRA_WIDTH : 0) //if hovered
+                    : BOOK_TEXTURE_WIDTH; //if not hovered
+            this.tabs.add(new Tab(name, color, bookLeft, bookTop, xOffset, this.nextTabYOffsetFromBookTop, pageIndex));
+            this.nextTabYOffsetFromBookTop += TAB_HEIGHT + TAB_GAP;
+            return this;
+        }
+    }
+
+    private TabList leftTabs, rightTabs;
 
     //book position
     private int bookLeft, bookRight, bookTop, bookBottom, leftPageLeft;
@@ -195,9 +283,11 @@ public class GuideBookScreen extends Screen
     private static final int BOOK_TEXTURE_WIDTH = 384;
     private static final int BOOK_TEXTURE_HEIGHT = 192;
     //tabs dimensions
+    private static final int TAB_MARGIN = 4; //margin (gap) from top to first tab, or from last tab to bottom
     private static final int TAB_WIDTH = 18;
-    private static final int TAB_HEIGHT = 36;
-    private static final int TAB_GAP = 10;
+    private static final int HOVERED_TAB_EXTRA_WIDTH = 4;
+    private static final int TAB_HEIGHT = 24;
+    private static final int TAB_GAP = 8;
     //navigation arrow dimension
     private static final int NAVIGATION_ARROW_SIZE = 20;
 
@@ -227,6 +317,8 @@ public class GuideBookScreen extends Screen
     @Override protected void init()
     {
         super.init();
+        this.createTabs();
+
         this.textScale = Minecraft.getInstance().options.forceUnicodeFont().get() ? 1.0F : 0.8F;
 
         this.bookLeft = (this.width - BOOK_TEXTURE_WIDTH) / 2;
@@ -254,6 +346,25 @@ public class GuideBookScreen extends Screen
         }
     }
 
+    protected void createTabs()
+    {
+        this.leftTabs = new TabList(true, () -> this.bookLeft, () -> this.bookTop)
+                .add("mobs",  0xFF4CAF50, 1)
+                .add("bosses",  0xFFE53935, 4)
+                .add("items", 0xFFFFB300, 6)
+                .add("wip", 0xFF26A69A, 6)
+                .add("wip", 0xFF7CB342, 6)
+                .add("wip", 0xFFD81B60, 6);
+
+        this.rightTabs = new TabList(false, () -> this.bookLeft, () -> this.bookTop)
+                .add("armors",  0xFF1E88E5, 11)
+                .add("tools",    0xFFFF6D00, 15)
+                .add("utilities", 0xFF8E24AA, 20)
+                .add("wip", 0xFF6D4C41, 20)
+                .add("wip", 0xFF546E7A, 20)
+                .add("wip", 0xFFAB47BC, 20);
+    }
+
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
         //navigation arrows
@@ -270,19 +381,19 @@ public class GuideBookScreen extends Screen
         }
 
         //tabs
-        for (int i = 0; i < TABS_LEFT.size(); i++)
+        for (Tab tab : leftTabs.getTabs())
         {
-            if (this.isHoveringTab(event.x(), event.y(), i, true))
+            if (tab.isHovered(event.x(), event.y()))
             {
-                this.navigateToTab(TABS_LEFT.get(i));
+                this.navigateToTab(tab);
                 return true;
             }
         }
-        for (int i = 0; i < TABS_RIGHT.size(); i++)
+        for (Tab tab : rightTabs.getTabs())
         {
-            if (this.isHoveringTab(event.x(), event.y(), i, false))
+            if (tab.isHovered(event.x(), event.y()))
             {
-                this.navigateToTab(TABS_RIGHT.get(i));
+                this.navigateToTab(tab);
                 return true;
             }
         }
@@ -299,56 +410,15 @@ public class GuideBookScreen extends Screen
         return mouseX >= this.rightNavigationArrowLeft && mouseX <= this.rightNavigationArrowRight && mouseY >= this.navigationArrowTop && mouseY <= this.navigationArrowBottom;
     }
 
-    private boolean isHoveringTab(double mouseX, double mouseY, int index, boolean isLeft)
-    {
-        int[] pos = getTabPos(index, isLeft);
-        return mouseX >= pos[0] && mouseX <= pos[0] + TAB_WIDTH && mouseY >= pos[1] && mouseY <= pos[1] + TAB_HEIGHT;
-    }
-
     @Override public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick)
     {
-        for (int i = 0; i < TABS_LEFT.size(); i++) {this.renderTab(graphics, i, true, mouseX, mouseY);}
-        for (int i = 0; i < TABS_RIGHT.size(); i++) {this.renderTab(graphics, i, false, mouseX, mouseY);}
+        for (Tab tab : leftTabs.getTabs()) {tab.render(graphics, this.font, mouseX, mouseY);}
+        for (Tab tab : rightTabs.getTabs()) {tab.render(graphics, this.font, mouseX, mouseY);}
 
         this.renderPageContent(graphics);
         this.renderNavigationButtons(graphics, mouseX, mouseY);
 
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private void renderTab(GuiGraphicsExtractor graphics, int index, boolean isLeft, int mouseX, int mouseY)
-    {
-        int[] pos = getTabPos(index, isLeft);
-        int x = pos[0];
-        int y = pos[1];
-        Tab tab = isLeft ? TABS_LEFT.get(index) : TABS_RIGHT.get(index);
-        boolean hovered = isHoveringTab(mouseX, mouseY, index, isLeft);
-
-        int tabWidth = TAB_WIDTH + (hovered ? 4 : 0);
-        int xDraw = isLeft ? x - (hovered ? 4 : 0) : x;
-
-        graphics.fill(xDraw, y, xDraw + tabWidth, y + TAB_HEIGHT, tab.color);
-
-        //border
-        graphics.fill(xDraw, y, xDraw + tabWidth, y + 1, 0xFF1A1A1A);
-        graphics.fill(xDraw, y + TAB_HEIGHT - 1, xDraw + tabWidth, y + TAB_HEIGHT, 0xFF1A1A1A);
-        graphics.fill(xDraw, y, xDraw + 1, y + TAB_HEIGHT, 0xFF1A1A1A);
-        graphics.fill(xDraw + tabWidth - 1, y, xDraw + tabWidth, y + TAB_HEIGHT, 0xFF1A1A1A);
-
-        //hover text
-        if (hovered)
-        {
-            graphics.setTooltipForNextFrame(this.font, Component.translatable(tab.key), mouseX, mouseY);
-        }
-    }
-
-    private int[] getTabPos(int tabIndex, boolean isLeft)
-    {
-        int totalH = TABS_LEFT.size() * TAB_HEIGHT + (TABS_LEFT.size() - 1) * TAB_GAP;
-        int startY = bookTop + (BOOK_TEXTURE_HEIGHT - totalH) / 2;
-        int y = startY + tabIndex * (TAB_HEIGHT + TAB_GAP);
-        int x = isLeft ? bookLeft - TAB_WIDTH : bookRight;
-        return new int[]{x, y};
     }
 
     private void renderPageContent(GuiGraphicsExtractor graphics)
