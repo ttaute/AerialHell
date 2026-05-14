@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.ToFloatFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,20 +163,22 @@ public class GuideBookScreen extends Screen
     private static class Tab
     {
         private final String key;
-        private final int color;
+        private final Identifier texture;
         private final Supplier<Integer> bookLeft;
         private final Supplier<Integer> bookTop;
         private final ToIntFunction<Boolean> relativeXPos; //relative to book left. the boolean is "isHovered"
         private final int relativeYPos; //relative to book top.
+        private final ToFloatFunction<Boolean> blitU; //blit texture start on x coordinate (u). the boolean is "isHovered"
         private final int pageIndex;
 
-        private Tab(String name, int color, Supplier<Integer> bookLeft, Supplier<Integer> bookTop, ToIntFunction<Boolean> relativeXPos, int relativeYPos, int pageIndex)
+        private Tab(String name, Supplier<Integer> bookLeft, Supplier<Integer> bookTop, boolean isLeft, int relativeYPos, int pageIndex)
         {
             this.key = "aerialhell.guide_book.tab." + name;
-            this.color = color;
+            this.texture = Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/gui/guide_book/tab/"+name+".png");
             this.bookLeft = bookLeft;
             this.bookTop = bookTop;
-            this.relativeXPos = relativeXPos;
+            this.relativeXPos = isLeft ? (isHovered) -> - TAB_WIDTH - (isHovered ? HOVERED_TAB_EXTRA_WIDTH : 0) : (isHovered) -> BOOK_TEXTURE_WIDTH;
+            this.blitU = isLeft ? (isHovered) -> 0.0F : (isHovered) -> isHovered ? 0.0F : 4.0F; //left tab is offset by default (due to relativeXPos moving). right tab : offset when not hovered, to give the impression that we are "pulling the tab" when hovered, like left one
             this.relativeYPos = relativeYPos;
             this.pageIndex = pageIndex;
         }
@@ -209,7 +212,7 @@ public class GuideBookScreen extends Screen
             int yDraw = pos[1];
             int tabWidth = this.getWidth(isHovered);
 
-            graphics.fill(xDraw, yDraw, xDraw + tabWidth, yDraw + TAB_HEIGHT, this.color);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, this.texture, xDraw, yDraw, blitU.applyAsFloat(isHovered), 0f, tabWidth, TAB_HEIGHT, 22, 24);
 
             //border
             graphics.fill(xDraw, yDraw, xDraw + tabWidth, yDraw + 1, 0xFF1A1A1A);
@@ -256,12 +259,9 @@ public class GuideBookScreen extends Screen
 
         public List<Tab> getTabs() {return this.tabs;}
 
-        private TabList add(String name, int color, int pageIndex)
+        private TabList add(String name, int pageIndex)
         {
-            ToIntFunction<Boolean> xOffset = (isHovered) ->
-                    this.isLeft ? - TAB_WIDTH - (isHovered ? HOVERED_TAB_EXTRA_WIDTH : 0) //if hovered
-                    : BOOK_TEXTURE_WIDTH; //if not hovered
-            this.tabs.add(new Tab(name, color, bookLeft, bookTop, xOffset, this.nextTabYOffsetFromBookTop, pageIndex));
+            this.tabs.add(new Tab(name, bookLeft, bookTop, this.isLeft, this.nextTabYOffsetFromBookTop, pageIndex));
             this.nextTabYOffsetFromBookTop += TAB_HEIGHT + TAB_GAP;
             return this;
         }
@@ -349,20 +349,20 @@ public class GuideBookScreen extends Screen
     protected void createTabs()
     {
         this.leftTabs = new TabList(true, () -> this.bookLeft, () -> this.bookTop)
-                .add("mobs",  0xFF4CAF50, 1)
-                .add("bosses",  0xFFE53935, 4)
-                .add("items", 0xFFFFB300, 6)
-                .add("wip", 0xFF26A69A, 6)
-                .add("wip", 0xFF7CB342, 6)
-                .add("wip", 0xFFD81B60, 6);
+                .add("journey", 1)
+                .add("crafting", 4)
+                .add("materials", 6)
+                .add("effects", 6)
+                .add("enchanting", 6)
+                .add("exploration", 6);
 
         this.rightTabs = new TabList(false, () -> this.bookLeft, () -> this.bookTop)
-                .add("armors",  0xFF1E88E5, 11)
-                .add("tools",    0xFFFF6D00, 15)
-                .add("utilities", 0xFF8E24AA, 20)
-                .add("wip", 0xFF6D4C41, 20)
-                .add("wip", 0xFF546E7A, 20)
-                .add("wip", 0xFFAB47BC, 20);
+                .add("bestiary", 11)
+                .add("bosses", 15)
+                .add("structures", 20)
+                .add("dungeons", 20)
+                .add("shadow_and_light", 20)
+                .add("items", 20);
     }
 
     @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
