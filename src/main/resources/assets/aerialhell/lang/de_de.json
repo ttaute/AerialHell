@@ -1232,7 +1232,7 @@
   "ability.aerialhell.passive_health_boost.desc_2" : "Du erhältst +2 Herzen",
   "ability.aerialhell.passive_health_boost.condition.desc" : "Bedingung: Muss in deiner Hotbar oder deine Hände sein.",
   "ability.aerialhell.mine_stone_fast.desc" : "Fähigkeit: Baue Stein schnell ab",
-  "ability.aerialhell.mine_stone_fast.desc_2" : "Stellarer (Bruch)stein und Schattenstein wird doppelt so schnell abgebaut.",
+  "ability.aerialhell.mine_stone_fast.desc_2" : "Stellarer Stein, Stellarer Bruchstein und Schattenstein wird doppelt so schnell abgebaut.",
   "ability.aerialhell.forgotten_battle_trident.desc" : "Fähigkeit: Wut des Delfins. Gibt dir Unterwasseratmung,",
   "ability.aerialhell.forgotten_battle_trident.desc_2" : "Gunst des Delfins, Schnelligkeit und Stärke für eine kurze Weile",
   "ability.aerialhell.forgotten_battle_trident.cooldown.desc" : "Abklingzeit: 27s",
