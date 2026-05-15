@@ -1,6 +1,6 @@
 package fr.factionbedrock.aerialhell.Client.Util;
 
-import fr.factionbedrock.aerialhell.Client.Gui.Screen.Inventory.GuideBookScreen;
+import fr.factionbedrock.aerialhell.Client.Gui.Screen.GuideBook.GuideBookScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
