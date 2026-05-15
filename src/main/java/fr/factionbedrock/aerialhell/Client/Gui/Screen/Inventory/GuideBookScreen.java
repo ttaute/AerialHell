@@ -37,6 +37,7 @@ public class GuideBookScreen extends Screen
         private final Identifier backgroundTexture;
         List<Paragraph> paragraphs;
         List<ItemDisplay> itemDisplays;
+        List<TextureDisplay> textureDisplays;
 
         private Page(String pageName, Identifier backgroundTexture, int pageIndex)
         {
@@ -45,9 +46,10 @@ public class GuideBookScreen extends Screen
             this.pageIndex = pageIndex;
             this.paragraphs = new ArrayList<>();
             this.itemDisplays = new ArrayList<>();
+            this.textureDisplays = new ArrayList<>();
         }
 
-        private void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop)
+        private void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop, int mouseX, int mouseY)
         {
             graphics.blit(RenderPipelines.GUI_TEXTURED, backgroundTexture, bookLeft, bookTop, 0f, 0f, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT, BOOK_TEXTURE_WIDTH, BOOK_TEXTURE_HEIGHT);
 
@@ -87,12 +89,39 @@ public class GuideBookScreen extends Screen
                     case RIGHT -> line.rightX - itemSize;
                 };
 
+                boolean hovered = mouseX >= startX && mouseX <= startX + itemSize && mouseY >= line.startY && mouseY <= line.startY + itemSize;
+
                 graphics.pose().pushMatrix();
 
                 graphics.pose().translate(startX, line.startY);
                 graphics.pose().scale(itemDisplay.scale(), itemDisplay.scale());
 
                 graphics.fakeItem(item.getDefaultInstance(), 0, 0);
+
+                graphics.pose().popMatrix();
+
+                if (hovered && itemDisplay.displayTooltip()) {graphics.setTooltipForNextFrame(font, item.getDefaultInstance(), mouseX, mouseY);}
+            }
+
+            for (TextureDisplay textureDisplay : this.textureDisplays)
+            {
+                Line line = Lines.get(textureDisplay.lineIndex());
+
+                int scaledWidth = (int)(textureDisplay.textureWidth() * textureDisplay.scale());
+
+                int startX = switch (textureDisplay.alignment())
+                {
+                    case LEFT -> line.startX;
+                    case CENTER -> line.centerX - scaledWidth / 2;
+                    case RIGHT -> line.rightX - scaledWidth;
+                };
+
+                graphics.pose().pushMatrix();
+
+                graphics.pose().translate(startX, line.startY);
+                graphics.pose().scale(textureDisplay.scale(), textureDisplay.scale());
+
+                graphics.blit(RenderPipelines.GUI_TEXTURED, textureDisplay.texture(), 0, 0, 0f, 0f, textureDisplay.textureWidth(), textureDisplay.textureHeight(), textureDisplay.textureWidth(), textureDisplay.textureHeight());
 
                 graphics.pose().popMatrix();
             }
@@ -113,27 +142,36 @@ public class GuideBookScreen extends Screen
             return this;
         }
 
-        private Page addItemTexture(int lineIndex, Alignment alignment, float scale, Supplier<Item> item)
+        private Page addItemTexture(int lineIndex, Alignment alignment, float scale, Supplier<Item> item, boolean displayTooltip)
         {
-            this.itemDisplays.add(new ItemDisplay(lineIndex, alignment, scale, item));
+            this.itemDisplays.add(new ItemDisplay(lineIndex, alignment, scale, item, displayTooltip));
+            return this;
+        }
+
+        private Page addTextureDisplay(int lineIndex, Alignment alignment, float scale, String path, int width, int height)
+        {
+            this.textureDisplays.add(new TextureDisplay(lineIndex, alignment, scale, Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/"+path+".png"), width, height));
             return this;
         }
     }
 
     private record Paragraph(int startLineIndex, Alignment alignment, int color, String key) {}
-    private record ItemDisplay(int lineIndex, Alignment alignment, float scale, Supplier<Item> item) {}
+    private record ItemDisplay(int lineIndex, Alignment alignment, float scale, Supplier<Item> item, boolean displayTooltip) {}
+    private record TextureDisplay(int lineIndex, Alignment alignment, float scale, Identifier texture, int textureWidth, int textureHeight) {}
     private enum Alignment {LEFT, CENTER, RIGHT}
 
     private static final List<Page> ALL_PAGES = List.of(
             new Page("summary", BOOK_TEXTURE, 0)
                     .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
                     .addParagraph(2, Alignment.LEFT, "welcome_text")
-                    .addItemTexture(4, Alignment.LEFT, 2.0F, AerialHellItems.VOLUCITE_PICKAXE)
-                    .addItemTexture(7, Alignment.CENTER, 2.0F, AerialHellItems.ARSONIST_PICKAXE)
-                    .addItemTexture(10, Alignment.RIGHT, 2.0F, AerialHellItems.VOLUCITE_ORE),
+                    .addItemTexture(4, Alignment.LEFT, 2.0F, AerialHellItems.VOLUCITE_PICKAXE, true)
+                    .addItemTexture(7, Alignment.CENTER, 2.0F, AerialHellItems.ARSONIST_PICKAXE, false)
+                    .addItemTexture(10, Alignment.RIGHT, 2.0F, AerialHellItems.VOLUCITE_ORE, true)
+                    .addTextureDisplay(18, Alignment.CENTER, 2.0F, "environment/celestial/aerial_hell_sun", 32, 32),
             new Page("mobs_1", BOOK_TEXTURE, 1)
                     .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
-                    .addParagraph(2, Alignment.RIGHT, "content_1"),
+                    .addParagraph(2, Alignment.RIGHT, "content_1")
+                    .addTextureDisplay(18, Alignment.CENTER, 2.0F, "block/freezer_side_on", 16, 48),
             new Page("mobs_2", BOOK_TEXTURE, 2)
                     .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
                     .addParagraph(2, Alignment.LEFT, "content_1"),
@@ -463,19 +501,19 @@ public class GuideBookScreen extends Screen
         for (Tab tab : leftTabs.getTabs()) {tab.render(graphics, this.font, mouseX, mouseY);}
         for (Tab tab : rightTabs.getTabs()) {tab.render(graphics, this.font, mouseX, mouseY);}
 
-        this.renderPageContent(graphics);
+        this.renderPageContent(graphics, mouseX, mouseY);
         this.renderNavigationButtons(graphics, mouseX, mouseY);
 
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderPageContent(GuiGraphicsExtractor graphics)
+    private void renderPageContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
     {
         Page currentPage = null;
         for (Page page : ALL_PAGES) {if (page.pageIndex() == this.currentPage) currentPage = page;}
         if (currentPage == null) {return;}
 
-        currentPage.render(this.font, graphics, this.textScale, lines, this.bookLeft, this.bookTop);
+        currentPage.render(this.font, graphics, this.textScale, lines, this.bookLeft, this.bookTop, mouseX, mouseY);
     }
 
     private void renderNavigationButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
