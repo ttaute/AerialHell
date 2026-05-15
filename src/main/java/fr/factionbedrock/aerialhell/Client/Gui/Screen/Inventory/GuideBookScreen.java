@@ -2,6 +2,7 @@ package fr.factionbedrock.aerialhell.Client.Gui.Screen.Inventory;
 
 import fr.factionbedrock.aerialhell.AerialHell;
 import fr.factionbedrock.aerialhell.Client.Util.ClientHelper;
+import fr.factionbedrock.aerialhell.Registry.AerialHellItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -12,6 +13,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ToFloatFunction;
+import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,7 @@ public class GuideBookScreen extends Screen
         private final int pageIndex;
         private final Identifier backgroundTexture;
         List<Paragraph> paragraphs;
+        List<ItemDisplay> itemDisplays;
 
         private Page(String pageName, Identifier backgroundTexture, int pageIndex)
         {
@@ -41,6 +44,7 @@ public class GuideBookScreen extends Screen
             this.backgroundTexture = backgroundTexture;
             this.pageIndex = pageIndex;
             this.paragraphs = new ArrayList<>();
+            this.itemDisplays = new ArrayList<>();
         }
 
         private void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop)
@@ -61,6 +65,29 @@ public class GuideBookScreen extends Screen
                     currentLineIndex++;
                 }
             }
+
+            for (ItemDisplay itemDisplay : this.itemDisplays)
+            {
+                Item item = itemDisplay.item.get();
+                if (item == null) {continue;}
+
+                Line line = Lines.get(itemDisplay.lineIndex());
+
+                int itemSize = (int)(16 * itemDisplay.scale());
+
+                int x = itemDisplay.centered() ? line.centerX - itemSize / 2 : line.startX;
+
+                int y = line.startY;
+
+                graphics.pose().pushMatrix();
+
+                graphics.pose().translate(x, y);
+                graphics.pose().scale(itemDisplay.scale(), itemDisplay.scale());
+
+                graphics.fakeItem(item.getDefaultInstance(), 0, 0);
+
+                graphics.pose().popMatrix();
+            }
         }
 
         private String pageName() {return this.pageName;}
@@ -77,14 +104,24 @@ public class GuideBookScreen extends Screen
             this.paragraphs.add(new Paragraph(startLineIndex, centered, color, "aerialhell.guide_book."+ pageName +"."+paragraphName));
             return this;
         }
+
+        private Page addItemTexture(int lineIndex, boolean centered, float scale, Supplier<Item> item)
+        {
+            this.itemDisplays.add(new ItemDisplay(lineIndex, centered, scale, item));
+            return this;
+        }
     }
 
     private record Paragraph(int startLineIndex, boolean centered, int color, String key) {}
+    private record ItemDisplay(int lineIndex, boolean centered, float scale, Supplier<Item> item) {}
 
     private static final List<Page> ALL_PAGES = List.of(
             new Page("summary", BOOK_TEXTURE, 0)
                     .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "welcome_text"),
+                    .addParagraph(2, false, "welcome_text")
+                    .addItemTexture(4, false, 2.0F, AerialHellItems.VOLUCITE_PICKAXE)
+                    .addItemTexture(7, true, 1.0F, AerialHellItems.ARSONIST_PICKAXE)
+                    .addItemTexture(10, true, 1.0F, AerialHellItems.VOLUCITE_ORE),
             new Page("mobs_1", BOOK_TEXTURE, 1)
                     .addParagraph(0, true, 0xFF5C3A1E, "title")
                     .addParagraph(2, false, "content_1"),
