@@ -59,7 +59,12 @@ public class GuideBookScreen extends Screen
                 List<String> textLines = ClientHelper.wrapTextForBook(paragraphText, font, (int) (LINE_WIDTH_NO_MARGIN / scale));
                 for (int i = 0; i < textLines.size() && currentLineIndex < MAX_LINES_PER_TECHNICAL_PAGE - 1; i++)
                 {
-                    int startX = paragraph.centered ? Lines.get(currentLineIndex).centerX(textLines.get(i), font, scale) : Lines.get(currentLineIndex).startX;
+                    int startX = switch (paragraph.alignment())
+                    {
+                        case LEFT -> Lines.get(currentLineIndex).startX;
+                        case CENTER -> Lines.get(currentLineIndex).centerX(textLines.get(i), font, scale);
+                        case RIGHT -> Lines.get(currentLineIndex).rightX(textLines.get(i), font, scale);
+                    };
 
                     ClientHelper.renderText(font, graphics, Component.literal(textLines.get(i)), startX, Lines.get(currentLineIndex).startY, paragraph.color, scale);
                     currentLineIndex++;
@@ -75,13 +80,16 @@ public class GuideBookScreen extends Screen
 
                 int itemSize = (int)(16 * itemDisplay.scale());
 
-                int x = itemDisplay.centered() ? line.centerX - itemSize / 2 : line.startX;
-
-                int y = line.startY;
+                int startX = switch (itemDisplay.alignment())
+                {
+                    case LEFT -> line.startX;
+                    case CENTER -> line.centerX - itemSize / 2;
+                    case RIGHT -> line.rightX - itemSize;
+                };
 
                 graphics.pose().pushMatrix();
 
-                graphics.pose().translate(x, y);
+                graphics.pose().translate(startX, line.startY);
                 graphics.pose().scale(itemDisplay.scale(), itemDisplay.scale());
 
                 graphics.fakeItem(item.getDefaultInstance(), 0, 0);
@@ -93,108 +101,109 @@ public class GuideBookScreen extends Screen
         private String pageName() {return this.pageName;}
         private int pageIndex() {return this.pageIndex;}
 
-        private Page addParagraph(int startLineIndex, boolean centered, String paragraphName)
+        private Page addParagraph(int startLineIndex, Alignment alignment, String paragraphName)
         {
-            this.paragraphs.add(new Paragraph(startLineIndex, centered, 0xFF7A5C3A, "aerialhell.guide_book."+ pageName +"."+paragraphName));
+            this.paragraphs.add(new Paragraph(startLineIndex, alignment, 0xFF7A5C3A, "aerialhell.guide_book."+ pageName +"."+paragraphName));
             return this;
         }
 
-        private Page addParagraph(int startLineIndex, boolean centered, int color, String paragraphName)
+        private Page addParagraph(int startLineIndex, Alignment alignment, int color, String paragraphName)
         {
-            this.paragraphs.add(new Paragraph(startLineIndex, centered, color, "aerialhell.guide_book."+ pageName +"."+paragraphName));
+            this.paragraphs.add(new Paragraph(startLineIndex, alignment, color, "aerialhell.guide_book."+ pageName +"."+paragraphName));
             return this;
         }
 
-        private Page addItemTexture(int lineIndex, boolean centered, float scale, Supplier<Item> item)
+        private Page addItemTexture(int lineIndex, Alignment alignment, float scale, Supplier<Item> item)
         {
-            this.itemDisplays.add(new ItemDisplay(lineIndex, centered, scale, item));
+            this.itemDisplays.add(new ItemDisplay(lineIndex, alignment, scale, item));
             return this;
         }
     }
 
-    private record Paragraph(int startLineIndex, boolean centered, int color, String key) {}
-    private record ItemDisplay(int lineIndex, boolean centered, float scale, Supplier<Item> item) {}
+    private record Paragraph(int startLineIndex, Alignment alignment, int color, String key) {}
+    private record ItemDisplay(int lineIndex, Alignment alignment, float scale, Supplier<Item> item) {}
+    private enum Alignment {LEFT, CENTER, RIGHT}
 
     private static final List<Page> ALL_PAGES = List.of(
             new Page("summary", BOOK_TEXTURE, 0)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "welcome_text")
-                    .addItemTexture(4, false, 2.0F, AerialHellItems.VOLUCITE_PICKAXE)
-                    .addItemTexture(7, true, 1.0F, AerialHellItems.ARSONIST_PICKAXE)
-                    .addItemTexture(10, true, 1.0F, AerialHellItems.VOLUCITE_ORE),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "welcome_text")
+                    .addItemTexture(4, Alignment.LEFT, 2.0F, AerialHellItems.VOLUCITE_PICKAXE)
+                    .addItemTexture(7, Alignment.CENTER, 2.0F, AerialHellItems.ARSONIST_PICKAXE)
+                    .addItemTexture(10, Alignment.RIGHT, 2.0F, AerialHellItems.VOLUCITE_ORE),
             new Page("mobs_1", BOOK_TEXTURE, 1)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.RIGHT, "content_1"),
             new Page("mobs_2", BOOK_TEXTURE, 2)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("mobs_3", BOOK_TEXTURE, 3)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("bosses_1", BOOK_TEXTURE, 4)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("bosses_2", BOOK_TEXTURE, 5)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(4, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(4, Alignment.LEFT, "content_1"),
             new Page("items_1", BOOK_TEXTURE, 6)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("items_2", BOOK_TEXTURE, 7)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("items_3", BOOK_TEXTURE, 8)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1")
-                    .addParagraph(16, false, "content_2"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1")
+                    .addParagraph(16, Alignment.LEFT, "content_2"),
             new Page("items_4", BOOK_TEXTURE, 9)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("items_5", BOOK_TEXTURE, 10)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(19, true, 0xFFFF0000, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(19, Alignment.CENTER, 0xFFFF0000, "content_1"),
             new Page("armors_1", BOOK_TEXTURE, 11)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("armors_2", BOOK_TEXTURE, 12)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("armors_3", BOOK_TEXTURE, 13)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("armors_4", BOOK_TEXTURE, 14)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, true, 0xFFFF0000, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.CENTER, 0xFFFF0000, "content_1"),
             new Page("tools_1", BOOK_TEXTURE, 15)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("tools_2", BOOK_TEXTURE, 16)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("tools_3", BOOK_TEXTURE, 17)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("tools_4", BOOK_TEXTURE, 18)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("tools_5", BOOK_TEXTURE, 19)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("utilities_1", BOOK_TEXTURE, 20)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("utilities_2", BOOK_TEXTURE, 21)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(5, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(5, Alignment.LEFT, "content_1"),
             new Page("utilities_3", BOOK_TEXTURE, 22)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("utilities_4", BOOK_TEXTURE, 23)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1"),
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1"),
             new Page("utilities_5", BOOK_TEXTURE, 24)
-                    .addParagraph(0, true, 0xFF5C3A1E, "title")
-                    .addParagraph(2, false, "content_1")
+                    .addParagraph(0, Alignment.CENTER, 0xFF5C3A1E, "title")
+                    .addParagraph(2, Alignment.LEFT, "content_1")
     );
 
     private static class Tab
@@ -339,9 +348,11 @@ public class GuideBookScreen extends Screen
     private static final int MAX_LINES_PER_VISUAL_PAGE = 17;
     private static final int MAX_LINES_PER_TECHNICAL_PAGE = MAX_LINES_PER_VISUAL_PAGE * 2;
 
-    private record Line(int index, int startX, int centerX, int startY)
+    private record Line(int index, int startX, int centerX, int rightX, int startY)
     {
         private int centerX(String textToCenter, Font font, float textScale) {return this.centerX - (int) (font.width(textToCenter) * textScale / 2.0F);}
+
+        private int rightX(String text, Font font, float textScale) {return this.rightX - (int)(font.width(text) * textScale);}
     }
     private final List<Line> lines = new ArrayList<>();
 
@@ -379,7 +390,7 @@ public class GuideBookScreen extends Screen
         for (int lineIndex = 0; lineIndex < MAX_LINES_PER_TECHNICAL_PAGE; lineIndex++)
         {
             boolean isLeftPageLine = lineIndex < MAX_LINES_PER_VISUAL_PAGE;
-            this.lines.add(new Line(lineIndex, isLeftPageLine ? this.leftPageLineX : this.rightPageLineX, isLeftPageLine ? this.leftPageCenterX : this.rightPageCenterX, this.firstLineY + (lineIndex % MAX_LINES_PER_VISUAL_PAGE) * LINE_HEIGHT));
+            this.lines.add(new Line(lineIndex, isLeftPageLine ? this.leftPageLineX : this.rightPageLineX, isLeftPageLine ? this.leftPageCenterX : this.rightPageCenterX, isLeftPageLine ? this.leftPageLineX + LINE_WIDTH_NO_MARGIN : this.rightPageLineX + LINE_WIDTH_NO_MARGIN, this.firstLineY + (lineIndex % MAX_LINES_PER_VISUAL_PAGE) * LINE_HEIGHT));
         }
     }
 
