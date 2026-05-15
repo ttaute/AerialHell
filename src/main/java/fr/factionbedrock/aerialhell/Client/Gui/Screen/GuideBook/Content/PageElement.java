@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface PageElement
 {
-    void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop, int mouseX, int mouseY);
+    void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> lines, int bookLeft, int bookTop, int mouseX, int mouseY);
 }

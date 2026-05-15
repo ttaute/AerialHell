@@ -73,7 +73,12 @@ public class GuideBookScreen extends Screen
                     .addParagraph(4, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.LEFT, "content_1"),
             new Page("items_1", BOOK_TEXTURE, 6)
                     .addParagraph(0, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.CENTER, 0xFF5C3A1E, "title")
-                    .addParagraph(2, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.LEFT, "content_1"),
+                    .addParagraph(2, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.LEFT, "content_1")
+                    .addCraftingTableRecipeDisplay(18, Alignment.CENTER, 1.5F, new CraftingTableRecipeDisplay.Ingredients(
+                            () -> null, AerialHellItems.RUBY, () -> null,
+                            () -> null, AerialHellItems.RUBY, () -> null,
+                            () -> null, AerialHellItems.SKY_STICK, () -> null
+                    ), AerialHellItems.RUBY_SWORD, true),
             new Page("items_2", BOOK_TEXTURE, 7)
                     .addParagraph(0, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.CENTER, 0xFF5C3A1E, "title")
                     .addParagraph(2, MAX_LINES_PER_TECHNICAL_PAGE - 1, LINE_WIDTH_NO_MARGIN, Alignment.LEFT, "content_1"),

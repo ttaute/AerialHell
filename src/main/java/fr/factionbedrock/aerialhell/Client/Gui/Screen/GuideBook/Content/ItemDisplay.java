@@ -9,12 +9,12 @@ import java.util.function.Supplier;
 
 public record ItemDisplay(int lineIndex, Alignment alignment, float scale, Supplier<Item> item, boolean displayTooltip) implements PageElement
 {
-    @Override public void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop, int mouseX, int mouseY)
+    @Override public void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> lines, int bookLeft, int bookTop, int mouseX, int mouseY)
     {
         Item item = this.item.get();
         if (item == null) {return;}
 
-        Line line = Lines.get(this.lineIndex());
+        Line line = lines.get(this.lineIndex());
 
         int itemSize = (int)(16 * this.scale());
 

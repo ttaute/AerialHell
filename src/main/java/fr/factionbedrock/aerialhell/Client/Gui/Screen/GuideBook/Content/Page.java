@@ -62,4 +62,10 @@ public class Page
         this.pageElements.add(new TextureDisplay(lineIndex, alignment, scale, new TextureInfo(Identifier.fromNamespaceAndPath(AerialHell.MODID, "textures/"+path+".png"), width, height)));
         return this;
     }
+
+    public Page addCraftingTableRecipeDisplay(int lineIndex, Alignment alignment, float scale, CraftingTableRecipeDisplay.Ingredients ingredients, Supplier<Item> result, boolean displayTooltip)
+    {
+        this.pageElements.add(new CraftingTableRecipeDisplay(lineIndex, alignment, scale, ingredients, result, displayTooltip));
+        return this;
+    }
 }

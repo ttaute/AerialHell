@@ -10,9 +10,9 @@ import java.util.List;
 
 public record TextureDisplay(int lineIndex, Alignment alignment, float scale, TextureInfo textureInfo) implements PageElement
 {
-    @Override public void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> Lines, int bookLeft, int bookTop, int mouseX, int mouseY)
+    @Override public void render(Font font, GuiGraphicsExtractor graphics, float scale, List<Line> lines, int bookLeft, int bookTop, int mouseX, int mouseY)
     {
-        Line line = Lines.get(this.lineIndex());
+        Line line = lines.get(this.lineIndex());
 
         int scaledWidth = (int)(this.textureInfo.width() * this.scale());
 

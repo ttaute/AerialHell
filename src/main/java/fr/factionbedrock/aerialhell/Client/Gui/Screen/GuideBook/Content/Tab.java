@@ -50,7 +50,6 @@ public class Tab
 
     private int[] getRenderPos(boolean isHovered)
     {
-        if (isHovered) System.out.println("bookTop = "+this.bookTop.get()+", relativeYPos = "+relativeYPos.applyAsInt(isHovered));
         return new int[]{this.bookLeft.get() + this.relativeXPos.applyAsInt(isHovered), this.bookTop.get() + this.relativeYPos.applyAsInt(isHovered)};
     }
 
